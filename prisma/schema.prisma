@@ -1,0 +1,528 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @map("_id")
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  role          String?
+  branch        String?
+  sessions      Session[]
+  accounts      Account[]
+
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+
+  // CRM Relations
+  assignedEnquiries        Enquiry[]         @relation("AssignedEnquiries")
+  createdEnquiries         Enquiry[]         @relation("CreatedEnquiries")
+  createdFollowUps         FollowUp[]        @relation("CreatedFollowUps")
+  createdCallLogs          CallLog[]         @relation("CreatedCallLogs")
+  createdInvoices          Invoice[]         @relation("CreatedInvoices")
+  createdAdmissions        Admission[]       @relation("CreatedAdmissions")
+  Admission                Admission[]
+  createdReceipts          Receipt[]         @relation("CreatedReceipts")
+  expenses                 Expense[]
+  createdEnquiryActivities EnquiryActivity[] @relation("CreatedEnquiryActivities")
+  EnquiryActivity          EnquiryActivity[]
+  HandledAdmissions        Admission[]       @relation("HandledAdmissions")
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Role {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique // admin, executive, telecaller
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("role")
+}
+
+model Session {
+  id        String   @id @map("_id")
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @map("_id")
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @map("_id")
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model Course {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String  @unique
+  description String?
+  duration    String?
+
+  // Fee collection fields
+  courseFee    Float?
+  admissionFee Float?
+  semesterFee  Float?
+
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  enquiries  Enquiry[]
+  admissions Admission[]
+  receipts   Receipt[]
+
+  @@map("course")
+}
+
+model Branch {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  enquiries Enquiry[]
+
+  @@map("branch")
+}
+
+model EnquirySource {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  enquiries Enquiry[]
+
+  @@map("enquiry_source")
+}
+
+model RequiredService {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  enquiries Enquiry[]
+
+  @@map("required_service")
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  NOT_INTERESTED
+  FOLLOW_UP
+  ENROLLED
+  DROPPED
+  INVALID
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum BillingStatus {
+  UNPAID
+  PAID
+  PARTIALLY_PAID
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum AdmissionGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AdmissionStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum CollectedTowards {
+  ADMISSION_FEE
+  COURSE_FEE
+  SEMESTER_FEE
+  OTHER
+}
+
+enum ExpenseCategory {
+  OFFICE_SUPPLIES
+  TRAVEL
+  UTILITIES
+  MARKETING
+  MEALS
+  EQUIPMENT
+  SOFTWARE
+  OTHER
+}
+
+enum ActivityType {
+  STATUS_CHANGE
+  FOLLOW_UP
+  CALL_LOG
+  ENROLLMENT_DIRECT
+}
+
+model Enquiry {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  candidateName   String
+  phone           String
+  contact2        String?
+  email           String?
+  address         String?
+  status          EnquiryStatus @default(NEW)
+  notes           String?
+  feedback        String?
+  lastContactDate DateTime?
+
+  // Relationships
+  branchId String? @db.ObjectId
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  preferredCourseId String? @db.ObjectId
+  preferredCourse   Course? @relation(fields: [preferredCourseId], references: [id])
+
+  enquirySourceId String?        @db.ObjectId
+  enquirySource   EnquirySource? @relation(fields: [enquirySourceId], references: [id])
+
+  requiredServiceId String?          @db.ObjectId
+  requiredService   RequiredService? @relation(fields: [requiredServiceId], references: [id])
+
+  assignedToUserId String?
+  assignedTo       User?   @relation("AssignedEnquiries", fields: [assignedToUserId], references: [id])
+
+  createdByUserId String?
+  createdBy       User?   @relation("CreatedEnquiries", fields: [createdByUserId], references: [id])
+
+  // Child relationships
+  followUps  FollowUp[]
+  callLogs   CallLog[]
+  activities EnquiryActivity[]
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  admissions Admission[]
+
+  @@map("enquiry")
+}
+
+model EnquiryActivity {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  type           ActivityType
+  title          String
+  description    String?
+  previousStatus EnquiryStatus?
+  newStatus      EnquiryStatus?
+  statusRemarks  String?
+
+  // Relationships
+  enquiryId String  @db.ObjectId
+  enquiry   Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  followUpId String?   @db.ObjectId
+  followUp   FollowUp? @relation(fields: [followUpId], references: [id])
+
+  callLogId String?  @db.ObjectId
+  callLog   CallLog? @relation(fields: [callLogId], references: [id])
+
+  createdByUserId String
+  createdBy       User   @relation("CreatedEnquiryActivities", fields: [createdByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+
+  @@map("enquiry_activity")
+}
+
+model FollowUp {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  scheduledAt DateTime
+  status      FollowUpStatus @default(PENDING)
+  outcome     String?
+  notes       String?
+
+  // Relationships
+  enquiryId String  @db.ObjectId
+  enquiry   Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  createdByUserId String
+  createdBy       User   @relation("CreatedFollowUps", fields: [createdByUserId], references: [id])
+
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  activities EnquiryActivity[]
+
+  @@map("follow_up")
+}
+
+model CallLog {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  callDate DateTime @default(now())
+  duration Int? // in minutes
+  outcome  String?
+  notes    String?
+
+  // Relationships
+  enquiryId String  @db.ObjectId
+  enquiry   Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  createdByUserId String
+  createdBy       User   @relation("CreatedCallLogs", fields: [createdByUserId], references: [id])
+
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  activities EnquiryActivity[]
+
+  @@map("call_log")
+}
+
+model Invoice {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceNumber String        @unique
+  billedTo      String
+  invoiceDate   DateTime      @default(now())
+  dueDate       DateTime?
+  subtotal      Float         @default(0)
+  taxRate       Float         @default(0.18)
+  taxAmount     Float         @default(0)
+  serviceCharge Float         @default(0)
+  otherCharges  Float         @default(0)
+  totalAmount   Float         @default(0)
+  status        InvoiceStatus @default(DRAFT)
+  notes         String?
+
+  // Relationships
+  createdByUserId String
+  createdBy       User   @relation("CreatedInvoices", fields: [createdByUserId], references: [id])
+
+  // Child relationships
+  items InvoiceItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice")
+}
+
+model InvoiceItem {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  itemDescription String
+  quantity        Int
+  unitPrice       Float
+  lineTotal       Float
+
+  // Relationships
+  invoiceId String  @db.ObjectId
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice_item")
+}
+
+model Admission {
+  id                String           @id @default(auto()) @map("_id") @db.ObjectId
+  admissionNumber   String           @unique
+  candidateName     String
+  mobileNumber      String
+  email             String?
+  gender            AdmissionGender?
+  dateOfBirth       DateTime?
+  address           String
+  leadSource        String?
+  lastQualification String?
+  yearOfPassing     Int?
+  percentageCGPA    String?
+  instituteName     String?
+  additionalNotes   String?
+
+  // Fee collection fields
+  balance     Float     @default(0)
+  nextDueDate DateTime?
+
+  status AdmissionStatus @default(PENDING)
+
+  // Relationships
+  enquiryId String?  @db.ObjectId
+  enquiry   Enquiry? @relation(fields: [enquiryId], references: [id])
+
+  courseId String @db.ObjectId
+  course   Course @relation(fields: [courseId], references: [id])
+
+  agentName       String?
+  agentCommission Float?
+
+  createdByUserId String
+  createdBy       User   @relation("CreatedAdmissions", fields: [createdByUserId], references: [id])
+
+  handledByUserId String?
+  handledBy       User?   @relation("HandledAdmissions", fields: [handledByUserId], references: [id])
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  User         User?         @relation(fields: [userId], references: [id])
+  userId       String?
+  receipts     Receipt[]
+  serviceBills ServiceBill[]
+
+  @@map("admission")
+}
+
+model Receipt {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  receiptNumber    String           @unique
+  amountCollected  Float
+  collectedTowards CollectedTowards
+  paymentDate      DateTime         @default(now())
+  paymentMode      String?
+  transactionId    String?
+  notes            String?
+
+  // Relationships
+  admissionId String    @db.ObjectId
+  admission   Admission @relation(fields: [admissionId], references: [id])
+
+  courseId String @db.ObjectId
+  course   Course @relation(fields: [courseId], references: [id])
+
+  createdBy   User   @relation("CreatedReceipts", fields: [createdById], references: [id])
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("receipt")
+}
+
+model Expense {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  amount      Float
+  category    ExpenseCategory
+  expenseDate DateTime
+  notes       String?
+  createdBy   User            @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("expense")
+}
+
+model Service {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  price     Float
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("service")
+}
+
+model ServiceBill {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  serviceIds String[]      @db.ObjectId // Array of service IDs
+  total      Float         @default(0)
+  status     BillingStatus @default(UNPAID)
+  billId     String        @unique
+  paid       Float         @default(0)
+  balance    Float         @default(0)
+  billDate   DateTime      @default(now())
+
+  admissionId String    @db.ObjectId
+  admission   Admission @relation(fields: [admissionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items ServiceBillItem[]
+
+  @@map("service_bill")
+}
+
+model ServiceBillItem {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  serviceBillId String      @db.ObjectId
+  serviceBill   ServiceBill @relation(fields: [serviceBillId], references: [id])
+
+  amount      Float
+  paymentMode String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("service_bill_item")
+}
