@@ -58,10 +58,9 @@ import {
   ArrowUpCircle,
 
 } from 'lucide-react';
-import { getEnquiry, assignEnquiry } from '@/server/actions/enquiry';
+import { getEnquiry } from '@/server/actions/enquiry';
 import { createFollowUp } from '@/server/actions/follow-up';
 import { createCallLog } from '@/server/actions/call-log';
-import { getUsers } from '@/server/actions/enquiry';
 import { getEnquiryActivities } from '@/server/actions/enquiry-activity-actions';
 import { ENQUIRY_STATUS_OPTIONS } from '@/constants/enquiry';
 import { useForm } from 'react-hook-form';
@@ -70,10 +69,10 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { EnquiryFormDialog } from '@/components/enquiry/enquiry-form-dialog';
+import { AssignEnquiryDialog } from '@/components/enquiry/assign-enquiry-dialog';
 import { StatusUpdateDialog } from '@/components/enquiry/status-update-dialog';
 import { EnquiryStatus, Enquiry, FollowUp, CallLog } from '@/types/enquiry';
 import { EnquiryActivity, ActivityType } from '@/types/enquiry-activity';
-import { User } from '@/types/data-management';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAction } from 'next-safe-action/hooks';
@@ -101,12 +100,10 @@ export default function EnquiryDetailPage() {
   const enquiryId = params.id as string;
 
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
   const [activities, setActivities] = useState<EnquiryActivity[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
-  const [isAssigning, setIsAssigning] = useState(false);
   const [isCreatingFollowUp, setIsCreatingFollowUp] = useState(false);
   const [isCreatingCallLog, setIsCreatingCallLog] = useState(false);
 
@@ -243,43 +240,7 @@ export default function EnquiryDetailPage() {
     }
   };
 
-  const handleAssignUser = async (userId: string) => {
-    setIsAssigning(true);
-    try {
-      const result = await assignEnquiry(enquiryId, userId);
-      if (result.success) {
-        toast.success(result.message);
-        setIsAssignDialogOpen(false);
-        handleStatusUpdateSuccess();
-      } else {
-        toast.error(result.message || 'Failed to assign enquiry');
-      }
-    } catch {
-      toast.error('Failed to assign enquiry');
-    } finally {
-      setIsAssigning(false);
-    }
-  };
 
-  // Fetch users when assign dialog opens
-  const fetchUsers = async () => {
-    try {
-      const result = await getUsers();
-      if (result.success) {
-        setUsers((result.data as User[]) || []);
-      } else {
-        toast.error(result.message || 'Failed to fetch users');
-      }
-    } catch {
-      toast.error('Failed to fetch users');
-    }
-  };
-
-  useEffect(() => {
-    if (isAssignDialogOpen) {
-      fetchUsers();
-    }
-  }, [isAssignDialogOpen]);
 
   const getStatusColor = (status: string) => {
     const statusConfig = ENQUIRY_STATUS_OPTIONS.find((s) => s.value === status);
@@ -621,14 +582,14 @@ export default function EnquiryDetailPage() {
                 </DialogTrigger>
               </Dialog>
 
-              <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="relative z-10 w-full">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    {enquiry.assignedTo ? 'Reassign' : 'Assign'}
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
+              <Button 
+                variant="outline" 
+                className="relative z-10 w-full"
+                onClick={() => setIsAssignDialogOpen(true)}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {enquiry.assignedTo ? 'Reassign' : 'Assign'}
+              </Button>
 
               <EnquiryFormDialog mode="edit" enquiry={enquiry} onSuccess={fetchEnquiry} />
 
@@ -920,48 +881,15 @@ export default function EnquiryDetailPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Dialog Content */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{enquiry.assignedTo ? 'Reassign Enquiry' : 'Assign Enquiry'}</DialogTitle>
-            <DialogDescription>
-              {enquiry.assignedTo
-                ? `Currently assigned to ${enquiry.assignedTo.name}. Select a new user to reassign.`
-                : 'Select a user to assign this enquiry to.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {users.length > 0 && (
-              <div className="space-y-2">
-                {users.map((user: User) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => handleAssignUser(user.id)}
-                  >
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      {user.role && (
-                        <Badge variant="secondary" className="text-xs">
-                          {user.role.name}
-                        </Badge>
-                      )}
-                    </div>
-                    {enquiry.assignedTo?.id === user.id && <Badge variant="default">Current</Badge>}
-                  </div>
-                ))}
-              </div>
-            )}
-            {isAssigning && (
-              <div className="flex items-center justify-center p-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-primary"></div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Assign Dialog Content - Replaced with Component */}
+      <AssignEnquiryDialog
+        open={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        enquiryId={enquiry.id}
+        currentAssigneeId={enquiry.assignedTo?.id}
+        candidateName={enquiry.candidateName}
+        onSuccess={handleStatusUpdateSuccess}
+      />
 
       {/* Enhanced Tabs */}
       <Tabs defaultValue="overview" className="w-full">

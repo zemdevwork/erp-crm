@@ -27,7 +27,7 @@ interface ActionResponse<T = unknown> {
 }
 
 // Helper function to get current user
-async function getCurrentUser() {
+export async function getCurrentUser() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -613,7 +613,50 @@ export async function assignEnquiry(id: string, assignedToUserId: string): Promi
       message: 'Failed to assign enquiry',
     };
   }
+
 }
+
+export async function bulkAssignEnquiries(ids: string[], assignedToUserId: string): Promise<ActionResponse> {
+  try {
+    const user = await getCurrentUser();
+
+    // Only admins and executives can assign enquiries
+    if (!['admin', 'executive'].includes(user.role || '')) {
+      return {
+        success: false,
+        message: 'Access denied',
+      };
+    }
+
+    if (!ids || ids.length === 0) {
+      return {
+        success: false,
+        message: 'No enquiries selected',
+      };
+    }
+
+    const result = await prisma.enquiry.updateMany({
+      where: {
+        id: { in: ids },
+      },
+      data: { assignedToUserId },
+    });
+
+    revalidatePath('/enquiries');
+    return { 
+      success: true, 
+      message: `${result.count} enquiries assigned successfully`,
+      data: result 
+    };
+  } catch (error) {
+    console.error('Error bulk assigning enquiries:', error);
+    return {
+      success: false,
+      message: 'Failed to assign enquiries',
+    };
+  }
+}
+
 
 export async function deleteEnquiry(id: string): Promise<ActionResponse> {
   try {

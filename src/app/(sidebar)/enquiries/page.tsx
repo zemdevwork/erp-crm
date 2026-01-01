@@ -21,13 +21,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, Filter, Eye, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, Filter, Eye, Edit, Trash2, MoreVertical, UserPlus, ListTodo } from 'lucide-react';
 import { getEnquiries } from '@/server/actions/enquiry';
 import { ENQUIRY_STATUS_OPTIONS } from '@/constants/enquiry';
 import { toast } from 'sonner';
 import { EnquiryFormDialog } from '@/components/enquiry/enquiry-form-dialog';
 import { DeleteEnquiryDialog } from '@/components/enquiry/delete-enquiry-dialog';
 import { EnquiryMobileCard } from '@/components/enquiry/enquiry-mobile-card';
+import { AssignEnquiryDialog } from '@/components/enquiry/assign-enquiry-dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Enquiry } from '@/types/enquiry';
 
@@ -55,6 +57,19 @@ export default function EnquiriesPage() {
     id: string;
     candidateName: string;
   } | null>(null);
+
+  // Assign dialog state
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [enquiryToAssign, setEnquiryToAssign] = useState<{
+    id: string;
+    candidateName: string;
+    assignedToId?: string | null;
+  } | null>(null);
+
+  // Bulk assign state
+  const [isBulkSelectionEnabled, setIsBulkSelectionEnabled] = useState(false);
+  const [selectedEnquiryIds, setSelectedEnquiryIds] = useState<string[]>([]);
+  const [isBulkAssignDialogOpen, setIsBulkAssignDialogOpen] = useState(false);
 
   // Fetch enquiries
   const fetchEnquiriesData = useCallback(async () => {
@@ -87,7 +102,34 @@ export default function EnquiriesPage() {
   // Refresh function to be called after successful enquiry creation
   const refreshEnquiries = useCallback(() => {
     fetchEnquiriesData();
+    setSelectedEnquiryIds([]); // Clear selection on refresh
   }, [fetchEnquiriesData]);
+
+  // Bulk Action Handlers
+  const toggleBulkSelection = () => {
+    setIsBulkSelectionEnabled(!isBulkSelectionEnabled);
+    setSelectedEnquiryIds([]);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedEnquiryIds(enquiries.map((e) => e.id));
+    } else {
+      setSelectedEnquiryIds([]);
+    }
+  };
+
+  const handleSelectEnquiry = (checked: boolean, id: string) => {
+    if (checked) {
+      setSelectedEnquiryIds((prev) => [...prev, id]);
+    } else {
+      setSelectedEnquiryIds((prev) => prev.filter((i) => i !== id));
+    }
+  };
+
+  const handleBulkAssign = () => {
+    setIsBulkAssignDialogOpen(true);
+  };
 
   // Action handlers for dropdown menu
   const handleViewEnquiry = (enquiryId: string) => {
@@ -102,6 +144,15 @@ export default function EnquiriesPage() {
   const handleDeleteEnquiry = (enquiryId: string, candidateName: string) => {
     setEnquiryToDelete({ id: enquiryId, candidateName });
     setDeleteDialogOpen(true);
+  };
+
+  const handleAssignEnquiry = (enquiry: Enquiry) => {
+    setEnquiryToAssign({
+      id: enquiry.id,
+      candidateName: enquiry.candidateName,
+      assignedToId: enquiry.assignedTo?.id
+    });
+    setAssignDialogOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -150,6 +201,19 @@ export default function EnquiriesPage() {
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
+            <Button 
+              variant={isBulkSelectionEnabled ? "secondary" : "outline"}
+              onClick={toggleBulkSelection}
+            >
+              <ListTodo className="mr-2 h-4 w-4" />
+              {isBulkSelectionEnabled ? 'Cancel Selection' : 'Bulk Assign'}
+            </Button>
+            {isBulkSelectionEnabled && selectedEnquiryIds.length > 0 && (
+              <Button onClick={handleBulkAssign}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Assign Selected ({selectedEnquiryIds.length})
+              </Button>
+            )}
             <Button variant="outline">
               <Filter className="mr-2 h-4 w-4" />
               Filter
@@ -198,10 +262,21 @@ export default function EnquiriesPage() {
                 </div>
               ) : (
                 // Desktop Table View
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Candidate</TableHead>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {isBulkSelectionEnabled && (
+                          <TableHead className="w-[50px]">
+                            <Checkbox
+                              checked={
+                                enquiries.length > 0 &&
+                                selectedEnquiryIds.length === enquiries.length
+                              }
+                              onCheckedChange={handleSelectAll}
+                            />
+                          </TableHead>
+                        )}
+                        <TableHead className="w-[200px]">Candidate</TableHead>
                       <TableHead className="w-[120px]">Contact</TableHead>
                       <TableHead className="w-[150px]">Course</TableHead>
                       <TableHead className="w-[100px]">Status</TableHead>
@@ -214,6 +289,16 @@ export default function EnquiriesPage() {
                   <TableBody>
                     {enquiries.map((enquiry) => (
                       <TableRow key={enquiry.id} className="hover:bg-muted/50">
+                        {isBulkSelectionEnabled && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedEnquiryIds.includes(enquiry.id)}
+                              onCheckedChange={(checked) =>
+                                handleSelectEnquiry(checked as boolean, enquiry.id)
+                              }
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div>
                             <div className="font-medium">{enquiry.candidateName}</div>
@@ -278,6 +363,13 @@ export default function EnquiriesPage() {
                               >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="cursor-pointer"
+                                onClick={() => handleAssignEnquiry(enquiry)}
+                              >
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                Assign
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -351,6 +443,31 @@ export default function EnquiriesPage() {
           }}
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
+        />
+      )}
+
+      {/* Assign Dialog */}
+      {enquiryToAssign && (
+        <AssignEnquiryDialog
+          open={assignDialogOpen}
+          onOpenChange={setAssignDialogOpen}
+          enquiryId={enquiryToAssign.id}
+          currentAssigneeId={enquiryToAssign.assignedToId}
+          candidateName={enquiryToAssign.candidateName}
+          onSuccess={refreshEnquiries}
+        />
+      )}
+
+      {/* Bulk Assign Dialog */}
+      {isBulkSelectionEnabled && (
+        <AssignEnquiryDialog
+          open={isBulkAssignDialogOpen}
+          onOpenChange={setIsBulkAssignDialogOpen}
+          enquiryIds={selectedEnquiryIds}
+          onSuccess={() => {
+            refreshEnquiries();
+            setIsBulkSelectionEnabled(false);
+          }}
         />
       )}
     </div>
