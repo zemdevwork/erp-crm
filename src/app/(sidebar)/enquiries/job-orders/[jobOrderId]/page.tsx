@@ -37,7 +37,7 @@ import {
   MessageSquare,
   FileText
 } from 'lucide-react';
-import { getJobOrder, updateJobLeadStatus } from '@/server/actions/job-order';
+import { getJobOrder, updateJobLeadStatus, getJobOrderStats } from '@/server/actions/job-order';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
@@ -91,6 +91,7 @@ export default function JobOrderDetailPage({ params }: { params: Promise<{ jobOr
   const { jobOrderId } = use(params);
   const router = useRouter();
   const [jobOrder, setJobOrder] = useState<JobOrder | null>(null);
+  const [stats, setStats] = useState<{ percentage: number; closed: number; total: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -98,12 +99,20 @@ export default function JobOrderDetailPage({ params }: { params: Promise<{ jobOr
   const fetchJobOrder = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await getJobOrder(jobOrderId);
-      if (result.success) {
-        setJobOrder(result.data as JobOrder);
+      const [orderResult, statsResult] = await Promise.all([
+        getJobOrder(jobOrderId),
+        getJobOrderStats(jobOrderId)
+      ]);
+
+      if (orderResult.success) {
+        setJobOrder(orderResult.data as JobOrder);
       } else {
-        toast.error(result.message || 'Failed to fetch job order details');
+        toast.error(orderResult.message || 'Failed to fetch job order details');
         router.push('/enquiries/job-orders');
+      }
+
+      if (statsResult.success && statsResult.data) {
+        setStats(statsResult.data);
       }
     } catch {
       toast.error('An error occurred while fetching job order details');
@@ -133,6 +142,12 @@ export default function JobOrderDetailPage({ params }: { params: Promise<{ jobOr
             ),
           };
         });
+        
+        // Refresh stats
+        const statsResult = await getJobOrderStats(jobOrderId);
+        if (statsResult.success && statsResult.data) {
+          setStats(statsResult.data);
+        }
       } else {
         toast.error(result.message || 'Failed to update status');
       }
@@ -168,10 +183,10 @@ export default function JobOrderDetailPage({ params }: { params: Promise<{ jobOr
     return null;
   }
 
-  const pendingCount = jobOrder.jobLeads.filter(jl => jl.status === 'PENDING').length;
-  const closedCount = jobOrder.jobLeads.filter(jl => jl.status === 'CLOSED').length;
-  const totalLeads = jobOrder.jobLeads.length;
-  const progress = totalLeads > 0 ? (closedCount / totalLeads) * 100 : 0;
+  const pendingCount = stats ? stats.total - stats.closed : 0;
+  const closedCount = stats?.closed || 0;
+  const totalLeads = stats?.total || 0;
+  const progress = stats?.percentage || 0;
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">

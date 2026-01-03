@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import {
@@ -126,7 +127,7 @@ export async function getEnquiries(filters: EnquiryFilters = {}): Promise<Action
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: Record<string, unknown> = {};
+    const where: Prisma.EnquiryWhereInput = {};
 
     // Role-based filtering
     if (user.role === 'telecaller') {
@@ -639,57 +640,40 @@ export async function assignEnquiry(
         data: { assignedToUserId },
       });
 
-      // Try to create job order if model is available
-      try {
-        // Check if jobOrder exists on the transaction client
-        if (!('jobOrder' in tx)) {
-          console.warn('JobOrder model not available. Please run: npx prisma generate');
-          return enquiry;
+      // Generate job code
+      let jobCode = 'JB001';
+      const latestJobOrder = await tx.jobOrder.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { jobCode: true },
+      });
+
+      if (latestJobOrder?.jobCode) {
+        const match = latestJobOrder.jobCode.match(/JB(\d+)/);
+        if (match) {
+          const nextNumber = parseInt(match[1], 10) + 1;
+          jobCode = `JB${nextNumber.toString().padStart(3, '0')}`;
         }
-
-        // Generate job code
-        let jobCode = 'JB001';
-        const latestJobOrder = await (tx as any).jobOrder.findFirst({
-          orderBy: { createdAt: 'desc' },
-          select: { jobCode: true },
-        });
-
-        if (latestJobOrder?.jobCode) {
-          const match = latestJobOrder.jobCode.match(/JB(\d+)/);
-          if (match) {
-            const nextNumber = parseInt(match[1], 10) + 1;
-            jobCode = `JB${nextNumber.toString().padStart(3, '0')}`;
-          }
-        }
-
-        // Create job order
-        const jobOrder = await (tx as any).jobOrder.create({
-          data: {
-            jobCode,
-            managerId: assignedToUserId,
-            branchId: assignedUser.branch,
-            startDate,
-            endDate,
-          },
-        });
-
-        // Create job lead
-        await (tx as any).jobLead.create({
-          data: {
-            jobId: jobOrder.id,
-            leadId: id,
-            status: 'PENDING',
-          },
-        });
-      } catch (jobOrderError: any) {
-        // If the error is about the model not existing, log a helpful message
-        if (jobOrderError?.message?.includes('jobOrder') || jobOrderError?.message?.includes('Cannot read')) {
-          console.error('JobOrder model not available. Please run: npx prisma generate');
-        } else {
-          console.error('Failed to create job order:', jobOrderError);
-        }
-        // Continue without job order - enquiry is still assigned
       }
+
+      // Create job order
+      const jobOrder = await tx.jobOrder.create({
+        data: {
+          jobCode,
+          managerId: assignedToUserId,
+          branchId: assignedUser.branch!, // We verified this exists above
+          startDate,
+          endDate,
+        },
+      });
+
+      // Create job lead
+      await tx.jobLead.create({
+        data: {
+          jobId: jobOrder.id,
+          leadId: id,
+          status: 'PENDING',
+        },
+      });
 
       return enquiry;
     });
@@ -770,61 +754,44 @@ export async function bulkAssignEnquiries(
         data: { assignedToUserId },
       });
 
-      // Try to create job order if model is available
-      try {
-        // Check if jobOrder exists on the transaction client
-        if (!('jobOrder' in tx)) {
-          console.warn('JobOrder model not available. Please run: npx prisma generate');
-          return updateResult;
+      // Generate job code
+      let jobCode = 'JB001';
+      const latestJobOrder = await tx.jobOrder.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { jobCode: true },
+      });
+
+      if (latestJobOrder?.jobCode) {
+        const match = latestJobOrder.jobCode.match(/JB(\d+)/);
+        if (match) {
+          const nextNumber = parseInt(match[1], 10) + 1;
+          jobCode = `JB${nextNumber.toString().padStart(3, '0')}`;
         }
-
-        // Generate job code
-        let jobCode = 'JB001';
-        const latestJobOrder = await (tx as any).jobOrder.findFirst({
-          orderBy: { createdAt: 'desc' },
-          select: { jobCode: true },
-        });
-
-        if (latestJobOrder?.jobCode) {
-          const match = latestJobOrder.jobCode.match(/JB(\d+)/);
-          if (match) {
-            const nextNumber = parseInt(match[1], 10) + 1;
-            jobCode = `JB${nextNumber.toString().padStart(3, '0')}`;
-          }
-        }
-
-        // Create job order
-        const jobOrder = await (tx as any).jobOrder.create({
-          data: {
-            jobCode,
-            managerId: assignedToUserId,
-            branchId: assignedUser.branch,
-            startDate,
-            endDate,
-          },
-        });
-
-        // Create job leads for all enquiries
-        await Promise.all(
-          ids.map((enquiryId) =>
-            (tx as any).jobLead.create({
-              data: {
-                jobId: jobOrder.id,
-                leadId: enquiryId,
-                status: 'PENDING',
-              },
-            })
-          )
-        );
-      } catch (jobOrderError: any) {
-        // If the error is about the model not existing, log a helpful message
-        if (jobOrderError?.message?.includes('jobOrder') || jobOrderError?.message?.includes('Cannot read')) {
-          console.error('JobOrder model not available. Please run: npx prisma generate');
-        } else {
-          console.error('Failed to create job order:', jobOrderError);
-        }
-        // Continue without job order - enquiries are still assigned
       }
+
+      // Create job order
+      const jobOrder = await tx.jobOrder.create({
+        data: {
+          jobCode,
+          managerId: assignedToUserId,
+          branchId: assignedUser.branch!, // We verified this exists above
+          startDate,
+          endDate,
+        },
+      });
+
+      // Create job leads for all enquiries
+      await Promise.all(
+        ids.map((enquiryId) =>
+          tx.jobLead.create({
+            data: {
+              jobId: jobOrder.id,
+              leadId: enquiryId,
+              status: 'PENDING',
+            },
+          })
+        )
+      );
 
       return updateResult;
     });

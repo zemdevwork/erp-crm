@@ -47,6 +47,14 @@ export const SIDEBAR_DATA: SidebarData = {
           title: 'Pending Jobs',
           url: '/enquiries/job-orders/pending',
         },
+        {
+          title: 'Completed Jobs',
+          url: '/enquiries/job-orders/completed',
+        },
+        {
+          title: 'Due Job Orders',
+          url: '/enquiries/job-orders/due',
+        },
       ],
     },
     {

@@ -58,7 +58,7 @@ interface JobOrder {
   };
 }
 
-export default function JobOrdersPage() {
+export default function DueJobOrdersPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
@@ -79,6 +79,7 @@ export default function JobOrdersPage() {
       const result = await getJobOrders({
         page: currentPage,
         limit: 10,
+        dueOnly: true,
       });
 
       if (result.success) {
@@ -128,8 +129,8 @@ export default function JobOrdersPage() {
     <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Job Orders</h1>
-          <p className="text-gray-600">View and manage all job orders</p>
+          <h1 className="text-3xl font-bold text-gray-900">Due Job Orders</h1>
+          <p className="text-gray-600">View job orders past their due date with pending items</p>
         </div>
       </div>
 
@@ -158,7 +159,7 @@ export default function JobOrdersPage() {
           <CardTitle>Job Orders</CardTitle>
           <CardDescription>
             {pagination
-              ? `Total: ${pagination.total} job orders${search ? ` (${filteredJobOrders.length} filtered)` : ''}`
+              ? `Total: ${pagination.total} due job orders${search ? ` (${filteredJobOrders.length} filtered)` : ''}`
               : 'Loading...'}
           </CardDescription>
         </CardHeader>
@@ -170,7 +171,7 @@ export default function JobOrdersPage() {
           ) : filteredJobOrders.length === 0 ? (
             <div className="flex items-center justify-center p-8">
               <div className="text-muted-foreground">
-                {search ? 'No job orders match your search' : 'No job orders found'}
+                {search ? 'No job orders match your search' : 'No overdue job orders found'}
               </div>
             </div>
           ) : isMobile ? (
@@ -178,7 +179,7 @@ export default function JobOrdersPage() {
               {filteredJobOrders.map((jobOrder) => {
                 const counts = getStatusCounts(jobOrder);
                 return (
-                  <Card key={jobOrder.id} className="p-4">
+                  <Card key={jobOrder.id} className="p-4 border-red-200 bg-red-50/10">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
                         <div>
@@ -211,12 +212,12 @@ export default function JobOrdersPage() {
                         </div>
                         <div>
                           <span className="text-muted-foreground">End Date:</span>
-                          <p className="font-medium">{formatDate(jobOrder.endDate)}</p>
+                          <p className="font-medium text-red-600">{formatDate(jobOrder.endDate)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">Total: {counts.total}</Badge>
-                        <Badge variant="secondary">Pending: {counts.pending}</Badge>
+                        <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-red-200">Pending: {counts.pending}</Badge>
                         <Badge variant="default">Closed: {counts.closed}</Badge>
                       </div>
                     </div>
@@ -255,17 +256,14 @@ export default function JobOrdersPage() {
                         </TableCell>
                         <TableCell>{jobOrder.branch.name}</TableCell>
                         <TableCell>{formatDate(jobOrder.startDate)}</TableCell>
-                        <TableCell>{formatDate(jobOrder.endDate)}</TableCell>
+                        <TableCell className="text-red-600 font-medium">{formatDate(jobOrder.endDate)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{counts.total}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs">
-                              P: {counts.pending}
-                            </Badge>
-                            <Badge variant="default" className="text-xs">
-                              C: {counts.closed}
+                            <Badge variant="destructive" className="text-xs">
+                              Due: {counts.pending}
                             </Badge>
                           </div>
                         </TableCell>
@@ -327,4 +325,3 @@ export default function JobOrdersPage() {
     </div>
   );
 }
-

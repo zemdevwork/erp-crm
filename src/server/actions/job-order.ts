@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { Prisma } from '@prisma/client';
 
 // Generic response type
 interface ActionResponse<T = unknown> {
@@ -61,8 +62,6 @@ export async function createJobOrder(
   enquiryIds: string[]
 ): Promise<ActionResponse> {
   try {
-    const user = await getCurrentUser();
-
     // Validate dates
     if (startDate > endDate) {
       return {
@@ -161,6 +160,9 @@ export async function createJobOrder(
     });
 
     revalidatePath('/enquiries/job-orders');
+    revalidatePath('/enquiries/job-orders/pending');
+    revalidatePath('/enquiries/job-orders/completed');
+    revalidatePath('/enquiries/job-orders/due');
     revalidatePath('/enquiries');
 
     return {
@@ -184,6 +186,8 @@ export async function getJobOrders(filters?: {
   page?: number;
   limit?: number;
   pendingOnly?: boolean;
+  completedOnly?: boolean;
+  dueOnly?: boolean;
 }): Promise<ActionResponse> {
   try {
     const user = await getCurrentUser();
@@ -191,7 +195,7 @@ export async function getJobOrders(filters?: {
     const limit = filters?.limit || 10;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.JobOrderWhereInput = {};
 
     if (filters?.managerId) {
       where.managerId = filters.managerId;
@@ -207,6 +211,23 @@ export async function getJobOrders(filters?: {
     }
 
     if (filters?.pendingOnly) {
+      where.jobLeads = {
+        some: {
+          status: 'PENDING',
+        },
+      };
+    }
+
+    if (filters?.completedOnly) {
+      where.jobLeads = {
+        every: {
+          status: 'CLOSED',
+        },
+      };
+    }
+
+    if (filters?.dueOnly) {
+      where.endDate = { lt: new Date() };
       where.jobLeads = {
         some: {
           status: 'PENDING',
@@ -419,6 +440,9 @@ export async function updateJobLeadStatus(
     });
 
     revalidatePath('/enquiries/job-orders');
+    revalidatePath('/enquiries/job-orders/pending');
+    revalidatePath('/enquiries/job-orders/completed');
+    revalidatePath('/enquiries/job-orders/due');
     return {
       success: true,
       data: updatedJobLead,
@@ -433,3 +457,55 @@ export async function updateJobLeadStatus(
   }
 }
 
+
+// Get job order statistics
+export async function getJobOrderStats(
+  jobId: string
+): Promise<
+  ActionResponse<{
+    percentage: number;
+    closed: number;
+    total: number;
+  }>
+> {
+  try {
+    // Ensure authenticated user
+    await getCurrentUser();
+
+    // Total job leads for this job order
+    const totalJobLeads = await prisma.jobLead.count({
+      where: {
+        jobId,
+      },
+    });
+
+    const closedJobLeads = await prisma.jobLead.count({
+      where: {
+        jobId,
+        status: 'CLOSED',
+      },
+    });
+
+    // Avoid division by zero
+    const percentage =
+      totalJobLeads > 0
+        ? Math.round((closedJobLeads / totalJobLeads) * 100)
+        : 0;
+
+    return {
+      success: true,
+      message: 'Job order progress calculated successfully',
+      data: {
+        percentage,
+        closed: closedJobLeads,
+        total: totalJobLeads,
+      },
+    };
+  } catch (error) {
+    console.error('Error calculating job order progress:', error);
+    return {
+      success: false,
+      message: 'Failed to calculate job order progress',
+    };
+  }
+}

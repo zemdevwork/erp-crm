@@ -173,6 +173,7 @@ export function AdmissionPaymentReportContent() {
     }, 400);
 
     return () => clearTimeout(timeout);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.search]);
 
   if (loading) {
