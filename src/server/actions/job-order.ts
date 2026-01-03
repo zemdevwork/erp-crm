@@ -183,6 +183,7 @@ export async function getJobOrders(filters?: {
   branchId?: string;
   page?: number;
   limit?: number;
+  pendingOnly?: boolean;
 }): Promise<ActionResponse> {
   try {
     const user = await getCurrentUser();
@@ -201,10 +202,16 @@ export async function getJobOrders(filters?: {
     }
 
     // Role-based filtering
-    if (user.role === 'telecaller') {
+    if (user.role !== 'admin') {
       where.managerId = user.id;
-    } else if (user.role !== 'admin' && user.branch) {
-      where.branchId = user.branch;
+    }
+
+    if (filters?.pendingOnly) {
+      where.jobLeads = {
+        some: {
+          status: 'PENDING',
+        },
+      };
     }
 
     const [jobOrders, total] = await Promise.all([
@@ -304,7 +311,15 @@ export async function getJobOrder(id: string): Promise<ActionResponse> {
                 email: true,
                 status: true,
                 address: true,
+                notes: true,
+                lastContactDate: true,
                 preferredCourse: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                enquirySource: {
                   select: {
                     id: true,
                     name: true,
@@ -332,14 +347,7 @@ export async function getJobOrder(id: string): Promise<ActionResponse> {
     }
 
     // Role-based access control
-    if (user.role === 'telecaller' && jobOrder.managerId !== user.id) {
-      return {
-        success: false,
-        message: 'Access denied',
-      };
-    }
-
-    if (user.role !== 'admin' && user.branch && jobOrder.branchId !== user.branch) {
+    if (user.role !== 'admin' && jobOrder.managerId !== user.id) {
       return {
         success: false,
         message: 'Access denied',

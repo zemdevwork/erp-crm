@@ -4,7 +4,12 @@ import type { UserProfile } from '@/types/user';
 export interface NavItem {
   title: string;
   url: string;
-  icon: Icon;
+  icon?: Icon;
+  isActive?: boolean;
+  items?: {
+    title: string;
+    url: string;
+  }[];
 }
 
 // Re-export UserProfile for convenience

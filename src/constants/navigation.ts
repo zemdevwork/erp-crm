@@ -35,8 +35,19 @@ export const SIDEBAR_DATA: SidebarData = {
     },
     {
       title: 'Job Orders',
-      url: '/enquiries/job-orders',
+      url: '#',
       icon: IconBriefcase,
+      isActive: true, // Default open for visibility or logic based
+      items: [
+        {
+          title: 'Job List',
+          url: '/enquiries/job-orders',
+        },
+        {
+          title: 'Pending Jobs',
+          url: '/enquiries/job-orders/pending',
+        },
+      ],
     },
     {
       title: 'Follow-ups',
