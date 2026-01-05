@@ -32,10 +32,21 @@ import { EnquiryMobileCard } from '@/components/enquiry/enquiry-mobile-card';
 import { AssignEnquiryDialog } from '@/components/enquiry/assign-enquiry-dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Enquiry } from '@/types/enquiry';
+import { authClient } from '@/lib/auth-client';
 
 export default function EnquiriesPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { data: session } = authClient.useSession();
+  const userRole = session?.user?.role?.toLowerCase();
+  const canAssign = userRole === 'admin' || userRole === 'manager';
+  
+  // Debug: Log role for troubleshooting (remove in production)
+  useEffect(() => {
+    if (session?.user?.role) {
+      console.log('User role:', session.user.role, 'canAssign:', canAssign);
+    }
+  }, [session?.user?.role, canAssign]);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
@@ -210,18 +221,22 @@ export default function EnquiriesPage() {
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
-            <Button 
-              variant={isBulkSelectionEnabled ? "secondary" : "outline"}
-              onClick={toggleBulkSelection}
-            >
-              <ListTodo className="mr-2 h-4 w-4" />
-              {isBulkSelectionEnabled ? 'Cancel Selection' : 'Bulk Assign'}
-            </Button>
-            {isBulkSelectionEnabled && selectedEnquiryIds.length > 0 && (
-              <Button onClick={handleBulkAssign}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Assign Selected ({selectedEnquiryIds.length})
-              </Button>
+            {canAssign && (
+              <>
+                <Button 
+                  variant={isBulkSelectionEnabled ? "secondary" : "outline"}
+                  onClick={toggleBulkSelection}
+                >
+                  <ListTodo className="mr-2 h-4 w-4" />
+                  {isBulkSelectionEnabled ? 'Cancel Selection' : 'Bulk Assign'}
+                </Button>
+                {isBulkSelectionEnabled && selectedEnquiryIds.length > 0 && (
+                  <Button onClick={handleBulkAssign}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Assign Selected ({selectedEnquiryIds.length})
+                  </Button>
+                )}
+              </>
             )}
             <Button variant="outline">
               <Filter className="mr-2 h-4 w-4" />
@@ -373,14 +388,16 @@ export default function EnquiriesPage() {
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="cursor-pointer"
-                                onClick={() => handleAssignEnquiry(enquiry)}
-                              >
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                Assign
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
+                              {canAssign && (
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onClick={() => handleAssignEnquiry(enquiry)}
+                                >
+                                  <UserPlus className="mr-2 h-4 w-4" />
+                                  Assign
+                                </DropdownMenuItem>
+                              )}
+                              {canAssign && <DropdownMenuSeparator />}
                               <DropdownMenuItem
                                 onClick={() => handleDeleteEnquiry(enquiry.id, enquiry.candidateName)}
                                 className="cursor-pointer text-red-600"

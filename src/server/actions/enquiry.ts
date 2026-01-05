@@ -600,8 +600,8 @@ export async function assignEnquiry(
   try {
     const user = await getCurrentUser();
 
-    // Only admins and executives can assign enquiries
-    if (!['admin', 'executive'].includes(user.role || '')) {
+    // Only admins and managers can assign enquiries
+    if (!['admin', 'manager'].includes((user.role || '').toLowerCase())) {
       return {
         success: false,
         message: 'Access denied',
@@ -726,8 +726,8 @@ export async function bulkAssignEnquiries(
   try {
     const user = await getCurrentUser();
 
-    // Only admins and executives can assign enquiries
-    if (!['admin', 'executive'].includes(user.role || '')) {
+    // Only admins and managers can assign enquiries
+    if (!['admin', 'manager'].includes((user.role || '').toLowerCase())) {
       return {
         success: false,
         message: 'Access denied',
