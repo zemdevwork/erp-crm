@@ -537,6 +537,7 @@ model ServiceBillItem {
 
 model JobOrder {
   id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  jobCode    String?
   name       String
   description String?
   remarks    String?

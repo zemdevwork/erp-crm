@@ -680,6 +680,7 @@ export async function assignEnquiry(
           branchId,
           startDate,
           endDate,
+          jobCode: null,
         },
       });
 
@@ -814,6 +815,7 @@ export async function bulkAssignEnquiries(
           branchId,
           startDate,
           endDate,
+          jobCode: null,
         },
       });
 

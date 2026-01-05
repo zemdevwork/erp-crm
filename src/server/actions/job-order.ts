@@ -123,6 +123,7 @@ export async function createJobOrder(input: CreateJobOrderInput): Promise<Action
           branchId: finalBranchId,
           startDate,
           endDate,
+          jobCode: null,
         },
         include: {
           manager: {
