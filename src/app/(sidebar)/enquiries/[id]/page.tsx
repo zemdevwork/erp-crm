@@ -76,6 +76,7 @@ import { EnquiryActivity, ActivityType } from '@/types/enquiry-activity';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAction } from 'next-safe-action/hooks';
+import { authClient } from '@/lib/auth-client';
 
 // Form schemas
 const followUpSchema = z.object({
@@ -98,6 +99,9 @@ export default function EnquiryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const enquiryId = params.id as string;
+  const { data: session } = authClient.useSession();
+  const userRole = session?.user?.role?.toLowerCase();
+  const canAssign = userRole === 'admin' || userRole === 'manager';
 
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
   const [activities, setActivities] = useState<EnquiryActivity[]>([]);
@@ -582,14 +586,16 @@ export default function EnquiryDetailPage() {
                 </DialogTrigger>
               </Dialog>
 
-              <Button 
-                variant="outline" 
-                className="relative z-10 w-full"
-                onClick={() => setIsAssignDialogOpen(true)}
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                {enquiry.assignedTo ? 'Reassign' : 'Assign'}
-              </Button>
+              {canAssign && (
+                <Button 
+                  variant="outline" 
+                  className="relative z-10 w-full"
+                  onClick={() => setIsAssignDialogOpen(true)}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  {enquiry.assignedTo ? 'Reassign' : 'Assign'}
+                </Button>
+              )}
 
               <EnquiryFormDialog mode="edit" enquiry={enquiry} onSuccess={fetchEnquiry} />
 
