@@ -37,23 +37,15 @@ export const SIDEBAR_DATA: SidebarData = {
       title: 'Job Orders',
       url: '#',
       icon: IconBriefcase,
-      isActive: true, // Default open for visibility or logic based
+      isActive: false, // Default open for visibility or logic based
       items: [
         {
-          title: 'Job List',
-          url: '/enquiries/job-orders',
-        },
-        {
-          title: 'Pending Jobs',
+          title: 'Pending',
           url: '/enquiries/job-orders/pending',
         },
         {
-          title: 'Completed Jobs',
+          title: 'Completed',
           url: '/enquiries/job-orders/completed',
-        },
-        {
-          title: 'Due Job Orders',
-          url: '/enquiries/job-orders/due',
         },
       ],
     },
