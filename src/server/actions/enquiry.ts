@@ -6,6 +6,8 @@ import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { createNotification } from './notification';
+import { NotificationType } from '@prisma/client';
 import {
   EnquiryStatus,
   CreateEnquiryInput,
@@ -629,6 +631,19 @@ export async function assignEnquiry(
     }
 
     // Validate dates
+    // Validate dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      return {
+        success: false,
+        message: 'Start date cannot be in the past',
+      };
+    }
+
     if (startDate > endDate) {
       return {
         success: false,
@@ -715,6 +730,20 @@ export async function assignEnquiry(
     revalidatePath('/enquiries/job-orders/pending');
     revalidatePath('/enquiries/job-orders/completed');
     revalidatePath('/enquiries/job-orders/due');
+
+    // Send notification
+    if (assignedToUserId !== user.id) {
+      // We can't access enquiry details easily if we didn't fetch them or return them fully.
+      // The result.enquiry might help if we modify the return, but result is the enquiry.
+      await createNotification(
+        assignedToUserId,
+        'New Enquiry Assigned',
+        'You have been assigned a new enquiry.',
+        NotificationType.ENQUIRY_ASSIGNED,
+        `/enquiries/${id}`
+      );
+    }
+
     return { success: true, data: result, message: 'Enquiry assigned and job order created successfully' };
   } catch (error) {
     console.error('Error assigning enquiry:', error);
@@ -762,6 +791,19 @@ export async function bulkAssignEnquiries(
     }
 
     // Validate dates
+    // Validate dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      return {
+        success: false,
+        message: 'Start date cannot be in the past',
+      };
+    }
+
     if (startDate > endDate) {
       return {
         success: false,
@@ -853,6 +895,18 @@ export async function bulkAssignEnquiries(
     revalidatePath('/enquiries/job-orders/pending');
     revalidatePath('/enquiries/job-orders/completed');
     revalidatePath('/enquiries/job-orders/due');
+
+    // Send notification
+    if (assignedToUserId !== user.id) {
+      await createNotification(
+        assignedToUserId,
+        'Bulk Enquiries Assigned',
+        `You have been assigned ${ids.length} new enquiries.`,
+        NotificationType.ENQUIRY_ASSIGNED,
+        '/enquiries'
+      );
+    }
+
     return {
       success: true,
       message: `${result.count} enquiries assigned and job order created successfully`,

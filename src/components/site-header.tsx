@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 interface SiteHeaderProps {
   title?: string;
@@ -14,8 +15,9 @@ export function SiteHeader({ title = 'Dashboard', showGitHubLink = false }: Site
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <h1 className="text-base font-medium">{title}</h1>
-        {showGitHubLink && (
-          <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
+          <NotificationBell />
+          {showGitHubLink && (
             <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
               <a
                 href="https://github.com/shadcn-ui/ui"
@@ -26,8 +28,8 @@ export function SiteHeader({ title = 'Dashboard', showGitHubLink = false }: Site
                 GitHub
               </a>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </header>
   );
