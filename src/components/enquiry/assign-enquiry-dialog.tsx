@@ -359,7 +359,7 @@ export function AssignEnquiryDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
+
 
           {/* Date Selection */}
           <div className="grid grid-cols-2 gap-4">
@@ -425,17 +425,7 @@ export function AssignEnquiryDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="job-description">Description (optional)</Label>
-            <Textarea
-              id="job-description"
-              placeholder="Add a short description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={isAssigning}
-              rows={2}
-            />
-          </div>
+
 
           {/* Remarks */}
           <div className="space-y-2">
