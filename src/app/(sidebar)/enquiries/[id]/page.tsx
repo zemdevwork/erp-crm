@@ -116,6 +116,9 @@ export default function EnquiryDetailPage() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
+  const [fixedBranchId, setFixedBranchId] = useState("");
+  const [fixedBranchName, setFixedBranchName] = useState("");
+
   // Safe action for fetching activities
   const {
     execute: fetchActivities,
@@ -150,8 +153,13 @@ export default function EnquiryDetailPage() {
   }, [enquiryId]);
 
   useEffect(()=>{
-    console.log(enquiry)
-  },[enquiry])
+    if(enquiry?.branch && enquiry.branch.id){
+      setFixedBranchId(enquiry.branch?.id);
+      setFixedBranchName(enquiry.branch?.name);
+    }else{
+      console.log("dnote kldjfnf")
+    }
+  },[enquiry?.branch?.id,enquiry?.branch?.name])
 
   // Fetch activities data (always fetch all activities, filter on client side)
   const loadActivities = useCallback(async () => {
@@ -615,16 +623,6 @@ export default function EnquiryDetailPage() {
                 }
               />
 
-              <AssignEnquiryDialog
-                open={isAssignDialogOpen}
-                onOpenChange={setIsAssignDialogOpen}
-                enquiryId={enquiry.id}
-                currentAssigneeId={enquiry.assignedTo?.id}
-                candidateName={enquiry.candidateName}
-                fixedBranchId={enquiry.branch?.id}
-                fixedBranchName={enquiry.branch?.name}
-                onSuccess={fetchEnquiry}
-              />
             </div>
           </div>
         </CardContent>
@@ -900,14 +898,18 @@ export default function EnquiryDetailPage() {
       </Dialog>
 
       {/* Assign Dialog Content - Replaced with Component */}
-      <AssignEnquiryDialog
-        open={isAssignDialogOpen}
-        onOpenChange={setIsAssignDialogOpen}
-        enquiryId={enquiry.id}
-        currentAssigneeId={enquiry.assignedTo?.id}
-        candidateName={enquiry.candidateName}
-        onSuccess={handleStatusUpdateSuccess}
-      />
+      {
+                (fixedBranchId && fixedBranchId ) &&<AssignEnquiryDialog
+                open={isAssignDialogOpen}
+                onOpenChange={setIsAssignDialogOpen}
+                enquiryId={enquiry.id}
+                currentAssigneeId={enquiry.assignedTo?.id}
+                candidateName={enquiry.candidateName}
+                fixedBranchId={fixedBranchId}
+                fixedBranchName={fixedBranchName}
+                onSuccess={fetchEnquiry}
+              />
+              }
 
       {/* Enhanced Tabs */}
       <Tabs defaultValue="overview" className="w-full">
