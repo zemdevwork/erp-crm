@@ -149,6 +149,10 @@ export default function EnquiryDetailPage() {
     }
   }, [enquiryId]);
 
+  useEffect(()=>{
+    console.log(enquiry)
+  },[enquiry])
+
   // Fetch activities data (always fetch all activities, filter on client side)
   const loadActivities = useCallback(async () => {
     if (!enquiryId) return;
@@ -185,9 +189,6 @@ export default function EnquiryDetailPage() {
       loadActivities();
     }
   }, [enquiryId, fetchEnquiry, loadActivities]);
-
-  // Note: Removed auto-refresh on visibility change and focus events
-  // Data will only refresh on page refresh or manual actions
 
   // Handle successful status update
   const handleStatusUpdateSuccess = useCallback(() => {
@@ -612,6 +613,17 @@ export default function EnquiryDetailPage() {
                     Update Status
                   </Button>
                 }
+              />
+
+              <AssignEnquiryDialog
+                open={isAssignDialogOpen}
+                onOpenChange={setIsAssignDialogOpen}
+                enquiryId={enquiry.id}
+                currentAssigneeId={enquiry.assignedTo?.id}
+                candidateName={enquiry.candidateName}
+                fixedBranchId={enquiry.branch?.id}
+                fixedBranchName={enquiry.branch?.name}
+                onSuccess={fetchEnquiry}
               />
             </div>
           </div>

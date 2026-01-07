@@ -66,6 +66,13 @@ interface JobOrder {
     name: string;
   };
   progress: number;
+  assigner?: {
+    id: string;
+    name: string;
+  };
+  _count?: {
+    jobLeads: number;
+  };
 }
 
 interface PendingJobOrdersClientProps {
@@ -232,36 +239,9 @@ export default function PendingJobOrdersClient({
       {/* Job Orders Table */}
       <Card>
         <CardContent className="p-0">
-          {filteredJobOrdersTable(isLoading, jobOrders, isMobile, pagination, isAdmin, isManager, handleViewJobOrder, handleDeleteJobOrder, openReassignDialog, formatDate)}
+          {filteredJobOrdersTable(isLoading, jobOrders, isMobile, pagination, isAdmin, isManager, handleViewJobOrder, handleDeleteJobOrder, formatDate)}
         </CardContent>
       </Card>
-
-      {/* Reassign Dialog */}
-      <Dialog open={isReassignOpen} onOpenChange={setIsReassignOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Re-assign Job Order</DialogTitle>
-            <DialogDescription>Select a new counselor/manager for this job order.</DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label>New Counselor</Label>
-            <Select value={newManagerId} onValueChange={setNewManagerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Counselor" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableManagers.map(m => (
-                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReassignOpen(false)}>Cancel</Button>
-            <Button onClick={handleReassign}>Re-assign</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -275,7 +255,6 @@ function filteredJobOrdersTable(
   isManager: boolean,
   handleViewJobOrder: (id: string) => void,
   handleDeleteJobOrder: (id: string) => void,
-  openReassignDialog: (id: string) => void,
   formatDate: (d: any) => string
 ) {
 
@@ -293,12 +272,14 @@ function filteredJobOrdersTable(
         <TableHeader>
           <TableRow>
             <TableHead>Job ID</TableHead>
+            <TableHead>Branch</TableHead>
             <TableHead>Job Name</TableHead>
+            <TableHead>Leads</TableHead>
             <TableHead>Counselor</TableHead>
+            <TableHead>Assigned By</TableHead>
             <TableHead>Date Period</TableHead>
             <TableHead>Progress</TableHead>
             <TableHead>Remarks</TableHead>
-            {/* Created By Skipped */}
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -306,8 +287,11 @@ function filteredJobOrdersTable(
           {jobOrders.map((job) => (
             <TableRow key={job.id}>
               <TableCell>{job.id.slice(-6)}</TableCell>
+              <TableCell>{job.branch.name}</TableCell>
               <TableCell className="font-medium">{job.name}</TableCell>
+              <TableCell>{job._count?.jobLeads || 0}</TableCell>
               <TableCell>{job.manager.name}</TableCell>
+              <TableCell>{job.assigner?.name || '-'}</TableCell>
               <TableCell>
                 {formatDate(job.startDate)} To {formatDate(job.endDate)}
               </TableCell>
@@ -330,9 +314,9 @@ function filteredJobOrdersTable(
                     </Button>
                   )}
 
-                  {(isAdmin || isManager) && (
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => openReassignDialog(job.id)}>
-                      <UserPlus className="h-4 w-4 text-teal-500" />
+                  {(isAdmin) && (
+                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleDeleteJobOrder(job.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   )}
                 </div>

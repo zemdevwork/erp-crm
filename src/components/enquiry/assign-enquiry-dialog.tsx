@@ -20,7 +20,7 @@ import { Branch, User } from '@/types/data-management';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Loader2, CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -183,10 +183,8 @@ export function AssignEnquiryDialog({
     }
 
     // Validate start date is not in the past
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
+    const start = startOfDay(startDate);
 
     if (start < today) {
       toast.error('Start date cannot be in the past');
@@ -291,37 +289,13 @@ export function AssignEnquiryDialog({
 
           {/* Branch */}
           <div className="space-y-2">
-            <Label htmlFor="branch">Branch *</Label>
-            {fixedBranchId ? (
-              <Input
-                id="branch"
-                value={fixedBranchName || 'Selected Branch'}
-                disabled
-                className="bg-muted text-muted-foreground"
-              />
-            ) : (
-              <Select
-                value={selectedBranchId}
-                onValueChange={(value) => {
-                  setSelectedBranchId(value);
-                  setSelectedUserId(null);
-                }}
-                disabled={isAssigning || isLoadingBranches || branches.length === 0}
-              >
-                <SelectTrigger id="branch">
-                  <SelectValue
-                    placeholder={isLoadingBranches ? 'Loading branches...' : 'Select branch'}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Label htmlFor="branch">Branch</Label>
+            <Input
+              id="branch"
+              value={fixedBranchName || branches.find(b => b.id === selectedBranchId)?.name || 'Loading...'}
+              disabled
+              className="bg-muted text-muted-foreground"
+            />
           </div>
 
             {/* User */}
@@ -364,7 +338,7 @@ export function AssignEnquiryDialog({
           {/* Date Selection */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="start-date">Start Date *</Label>
+              <Label htmlFor="start-date">Start Date *</Label> 
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -386,8 +360,7 @@ export function AssignEnquiryDialog({
                     selected={startDate}
                     onSelect={setStartDate}
                     disabled={(date) => {
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
+                      const today = startOfDay(new Date());
                       return date < today || (endDate ? date > endDate : false);
                     }}
                     initialFocus

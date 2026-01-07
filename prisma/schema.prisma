@@ -45,6 +45,9 @@ model User {
   EnquiryActivity          EnquiryActivity[]
   HandledAdmissions        Admission[]       @relation("HandledAdmissions")
   managedJobOrders         JobOrder[]        @relation("ManagedJobOrders")
+  assignedJobOrders        JobOrder[]        @relation("JobOrderAssigner")
+  assignedJobLeads         JobLead[]         @relation("JobLeadAssigner")
+  receivedJobLeads         JobLead[]         @relation("JobLeadAssignee")
   notifications            Notification[]
 
   @@unique([email])
@@ -544,6 +547,8 @@ model JobOrder {
   remarks    String?
   managerId  String
   manager    User      @relation("ManagedJobOrders", fields: [managerId], references: [id])
+  assignerId String?
+  assigner   User?     @relation("JobOrderAssigner", fields: [assignerId], references: [id])
   branchId   String    @db.ObjectId
   branch     Branch    @relation(fields: [branchId], references: [id])
   startDate  DateTime
@@ -561,6 +566,11 @@ model JobLead {
   status     JobLeadStatus @default(PENDING)
   leadId     String        @db.ObjectId
   lead       Enquiry       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  assignerId String?
+  assigner   User?         @relation("JobLeadAssigner", fields: [assignerId], references: [id])
+  assigneeId String?
+  assignee   User?         @relation("JobLeadAssignee", fields: [assigneeId], references: [id])
 
   @@map("job_lead")
 }

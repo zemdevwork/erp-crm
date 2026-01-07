@@ -180,6 +180,7 @@ export default function EnquiriesPage() {
 
   const handleBulkBranchSelect = (branchId: string) => {
     setFilterBranchId(branchId);
+    setFilterAssigned('unassigned');
     setBulkAssignBranchId(branchId);
     setIsBulkSelectionEnabled(true);
     setBulkBranchDialogOpen(false);

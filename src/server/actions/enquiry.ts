@@ -692,6 +692,11 @@ export async function assignEnquiry(
 
     // Use transaction to update enquiry and optionally create job order
     const result = await prisma.$transaction(async (tx) => {
+      // Remove existing job leads (re-assignment logic)
+      await tx.jobLead.deleteMany({
+        where: { leadId: id }
+      });
+
       // Update enquiry assignment
       const enquiry = await tx.enquiry.update({
         where: { id },
@@ -705,6 +710,7 @@ export async function assignEnquiry(
           description,
           remarks,
           managerId: assignedToUserId,
+          assignerId: user.id, // Track who assigned
           branchId,
           startDate,
           endDate,
@@ -718,6 +724,8 @@ export async function assignEnquiry(
           jobId: jobOrder.id,
           leadId: id,
           status: 'PENDING',
+          assignerId: user.id,
+          assigneeId: assignedToUserId, 
         },
       });
 
@@ -850,6 +858,24 @@ export async function bulkAssignEnquiries(
       };
     }
 
+    // Validation: Check if any enquiries are already assigned
+    const assignedEnquiriesCount = await prisma.enquiry.count({
+      where: {
+        id: { in: ids },
+        OR: [
+          { assignedToUserId: { not: null } },
+          { jobLeads: { some: {} } }
+        ]
+      }
+    });
+
+    if (assignedEnquiriesCount > 0) {
+      return {
+        success: false,
+        message: 'Some selected enquiries are already assigned. Bulk assignment requires unassigned enquiries.',
+      };
+    }
+
     // Use transaction to update enquiries and optionally create job order
     const result = await prisma.$transaction(async (tx) => {
       // Update all enquiries
@@ -867,6 +893,7 @@ export async function bulkAssignEnquiries(
           description,
           remarks,
           managerId: assignedToUserId,
+          assignerId: user.id, // Track who assigned
           branchId,
           startDate,
           endDate,
@@ -882,6 +909,8 @@ export async function bulkAssignEnquiries(
               jobId: jobOrder.id,
               leadId: enquiryId,
               status: 'PENDING',
+              assignerId: user.id,
+              assigneeId: assignedToUserId,
             },
           })
         )

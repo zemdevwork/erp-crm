@@ -303,6 +303,12 @@ export async function getJobOrders(filters?: {
               email: true,
             },
           },
+          assigner: {
+            select: {
+              id: true,
+              name: true,
+            }
+          },
           branch: {
             select: {
               id: true,
