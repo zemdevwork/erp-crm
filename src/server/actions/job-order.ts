@@ -716,3 +716,93 @@ export async function reassignJobOrder(
     };
   }
 }
+
+// Get single job lead by ID
+export async function getJobLead(id: string): Promise<ActionResponse> {
+  try {
+    const user = await getCurrentUser();
+
+    const jobLead = await prisma.jobLead.findUnique({
+      where: { id },
+      include: {
+        job: {
+          include: {
+            manager: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            branch: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        lead: {
+          include: {
+             preferredCourse: true,
+             enquirySource: true,
+             requiredService: true,
+             assignedTo: {
+               select: {
+                  id: true,
+                  name: true
+               }
+             }
+          }
+        },
+      },
+    });
+
+    if (!jobLead) {
+      return {
+        success: false,
+        message: 'Job lead not found',
+      };
+    }
+
+    // Role-based access control
+    // Similar logic to getJobOrder
+    const jobOrder = jobLead.job;
+    
+    if (user.role === 'admin') {
+      // Allowed
+    } else if (user.role === 'manager') {
+       if (user.branch && jobOrder.branchId !== user.branch) {
+         if (jobOrder.managerId !== user.id) {
+           return { success: false, message: 'Access denied' };
+         }
+       } else if (!user.branch && jobOrder.managerId !== user.id) {
+         return { success: false, message: 'Access denied' };
+       }
+    } else {
+       if (jobLead.job.managerId !== user.id) { // Telecaller check usually against manager? Or if they are assigned the lead?
+          // For now, sticking to job manager check as primary owner, 
+          // but arguably the 'assignee' of the lead should see it too if implemented.
+          // The schema has assigneeId on JobLead.
+          
+          if (jobLead.assigneeId === user.id) {
+             // Allowed if directly assigned to this lead
+          } else if (jobLead.job.managerId !== user.id) {
+             return { success: false, message: 'Access denied' };
+          }
+       }
+    }
+
+    return {
+      success: true,
+      data: jobLead,
+      message: 'Job lead fetched successfully',
+    };
+  } catch (error) {
+    console.error('Error fetching job lead:', error);
+    return {
+      success: false,
+      message: 'Failed to fetch job lead',
+    };
+  }
+}
