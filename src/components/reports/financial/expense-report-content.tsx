@@ -60,38 +60,38 @@ export function ExpenseReportContent() {
     DateRangeFilter | undefined
   >();
 
-const fetchReportData = useCallback(async () => {
-  filtersRef.current = {
-    dateRange,
-    searchTerm,
-    selectedUser,
-  };
+  const fetchReportData = useCallback(async () => {
+    filtersRef.current = {
+      dateRange,
+      searchTerm,
+      selectedUser,
+    };
 
-  console.log("fetch using filters:", filtersRef.current);
+    console.log("fetch using filters:", filtersRef.current);
 
-  try {
-    setLoading(true);
-    setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-    const result = await getExpenseReport(filtersRef.current);
+      const result = await getExpenseReport(filtersRef.current);
 
-    if (result?.data) {
-      setReportData(result.data);
-    } else {
-      setError("Failed to load expense report data");
+      if (result?.data) {
+        setReportData(result.data);
+      } else {
+        setError("Failed to load expense report data");
+      }
+    } catch (err) {
+      setError("An error occurred while loading the report");
+      console.error("Error fetching expense report:", err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    setError("An error occurred while loading the report");
-    console.error("Error fetching expense report:", err);
-  } finally {
-    setLoading(false);
-  }
-}, [dateRange, searchTerm, selectedUser]);
+  }, [dateRange, searchTerm, selectedUser]);
 
-useEffect(() => {
-  fetchReportData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+  useEffect(() => {
+    fetchReportData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   useEffect(() => {
@@ -260,8 +260,8 @@ useEffect(() => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2 w-full sm:w-[240px]">
               <label className="text-sm font-medium">Search Expenses</label>
               <div className="relative">
                 <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -274,29 +274,28 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-auto flex-1 min-w-[300px]">
               <label className="text-sm font-medium">Date Range</label>
-              <DatePickerWithRange
-                value={tempDateRange}
-                onChange={setTempDateRange}
-              />
+              <div className="flex gap-2">
+                <DatePickerWithRange
+                  value={tempDateRange}
+                  onChange={setTempDateRange}
+                  className="flex-1"
+                />
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setDateRange(tempDateRange);
+                    fetchReportData();
+                  }}
+                  className="shrink-0"
+                >
+                  Apply
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium invisible">Apply</label>
-              <Button
-                variant="default"
-                onClick={() => {
-                  setDateRange(tempDateRange);
-                  fetchReportData();
-                }}
-                className="w-full"
-              >
-                Apply Date Range
-              </Button>
-            </div>
-
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[200px]">
               <label className="text-sm font-medium">Category</label>
               <Select
                 value={selectedCategory}
@@ -316,7 +315,7 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[200px]">
               <label className="text-sm font-medium">User</label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger>
@@ -333,7 +332,7 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[160px]">
               <label className="text-sm font-medium">Sort By</label>
               <Select
                 value={sortBy}
@@ -352,7 +351,7 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[120px]">
               <label className="text-sm font-medium">Order</label>
               <Select
                 value={sortOrder}
@@ -563,10 +562,10 @@ useEffect(() => {
                           <div className="text-sm text-muted-foreground">
                             {reportData.totalExpenses > 0
                               ? Math.round(
-                                  (user.totalAmount /
-                                    reportData.totalExpenses) *
-                                    100
-                                )
+                                (user.totalAmount /
+                                  reportData.totalExpenses) *
+                                100
+                              )
                               : 0}
                             % of total
                           </div>
@@ -578,13 +577,12 @@ useEffect(() => {
                         <div
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{
-                            width: `${
-                              reportData.totalExpenses > 0
+                            width: `${reportData.totalExpenses > 0
                                 ? (user.totalAmount /
-                                    reportData.totalExpenses) *
-                                  100
+                                  reportData.totalExpenses) *
+                                100
                                 : 0
-                            }%`,
+                              }%`,
                           }}
                         />
                       </div>

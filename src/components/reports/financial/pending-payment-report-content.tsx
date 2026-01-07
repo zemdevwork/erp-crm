@@ -60,30 +60,30 @@ export function PendingPaymentReportContent() {
     DateRangeFilter | undefined
   >();
 
-const fetchReportData = useCallback(async () => {
-  try {
-    setLoading(true)
-    setError(null)
+  const fetchReportData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
 
-    const filters = {
-      dateRange,
-      search: searchTerm || undefined,
+      const filters = {
+        dateRange,
+        search: searchTerm || undefined,
+      }
+
+      const result = await getPendingPaymentReport(filters)
+
+      if (result?.data) {
+        setReportData(result.data)
+      } else {
+        setError('Failed to load pending payment report data')
+      }
+    } catch (err) {
+      setError('An error occurred while loading the report')
+      console.error('Error fetching pending payment report:', err)
+    } finally {
+      setLoading(false)
     }
-
-    const result = await getPendingPaymentReport(filters)
-
-    if (result?.data) {
-      setReportData(result.data)
-    } else {
-      setError('Failed to load pending payment report data')
-    }
-  } catch (err) {
-    setError('An error occurred while loading the report')
-    console.error('Error fetching pending payment report:', err)
-  } finally {
-    setLoading(false)
-  }
-}, [dateRange, searchTerm])
+  }, [dateRange, searchTerm])
 
 
   const handleExportCSV = async () => {
@@ -137,21 +137,21 @@ const fetchReportData = useCallback(async () => {
     }
   };
 
-useEffect(() => {
-  fetchReportData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [])
+  useEffect(() => {
+    fetchReportData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-useEffect(() => {
-  if (!searchTerm) return;
+  useEffect(() => {
+    if (!searchTerm) return;
 
-  const timeout = setTimeout(() => {
-    fetchReportData();
-  }, 400);
+    const timeout = setTimeout(() => {
+      fetchReportData();
+    }, 400);
 
-  return () => clearTimeout(timeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [searchTerm]);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
 
   // Filter and sort students
@@ -295,8 +295,8 @@ useEffect(() => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2 w-full sm:w-[240px]">
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
                 <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -309,29 +309,28 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-auto flex-1 min-w-[300px]">
               <label className="text-sm font-medium">Date Range</label>
-              <DatePickerWithRange
-                value={tempDateRange}
-                onChange={setTempDateRange}
-              />
+              <div className="flex gap-2">
+                <DatePickerWithRange
+                  value={tempDateRange}
+                  onChange={setTempDateRange}
+                  className="flex-1"
+                />
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setDateRange(tempDateRange);
+                    fetchReportData();
+                  }}
+                  className="shrink-0"
+                >
+                  Apply
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium invisible">Apply</label>
-              <Button
-                variant="default"
-                onClick={() => {
-                  setDateRange(tempDateRange);
-                  fetchReportData();
-                }}
-                className="w-full"
-              >
-                Apply Date Range
-              </Button>
-            </div>
-
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[200px]">
               <label className="text-sm font-medium">Priority</label>
               <Select
                 value={selectedPriority}
@@ -349,7 +348,7 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[160px]">
               <label className="text-sm font-medium">Sort By</label>
               <Select
                 value={sortBy}
@@ -369,7 +368,7 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[120px]">
               <label className="text-sm font-medium">Order</label>
               <Select
                 value={sortOrder}
@@ -602,9 +601,8 @@ useEffect(() => {
                       <div
                         className="bg-orange-600 h-2 rounded-full transition-all duration-300"
                         style={{
-                          width: `${
-                            (aging.amount / reportData.totalOutstanding) * 100
-                          }%`,
+                          width: `${(aging.amount / reportData.totalOutstanding) * 100
+                            }%`,
                         }}
                       />
                     </div>
@@ -810,8 +808,8 @@ useEffect(() => {
                               student.daysOverdue > 30
                                 ? "border-red-200 text-red-800"
                                 : student.daysOverdue > 7
-                                ? "border-yellow-200 text-yellow-800"
-                                : "border-green-200 text-green-800"
+                                  ? "border-yellow-200 text-yellow-800"
+                                  : "border-green-200 text-green-800"
                             }
                           >
                             {student.daysOverdue} days
@@ -840,17 +838,17 @@ useEffect(() => {
 
                 {(!filteredAndSortedStudents ||
                   filteredAndSortedStudents.length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <IconUsers className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      No Pending Payments
-                    </h3>
-                    <p className="text-sm">
-                      No students with outstanding payments found for the
-                      selected criteria.
-                    </p>
-                  </div>
-                )}
+                    <div className="text-center py-8 text-muted-foreground">
+                      <IconUsers className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        No Pending Payments
+                      </h3>
+                      <p className="text-sm">
+                        No students with outstanding payments found for the
+                        selected criteria.
+                      </p>
+                    </div>
+                  )}
               </div>
             </CardContent>
           </Card>

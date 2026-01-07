@@ -38,6 +38,7 @@ import {
   exportTelecallerReportCSV,
 } from "@/server/actions/report-actions";
 import { TelecallerReport, DateRangeFilter } from "@/types/reports";
+import { TelecallerReportSkeleton } from "./telecaller-report-skeleton";
 
 interface TelecallerReportContentProps {
   userId: string;
@@ -56,7 +57,7 @@ export function TelecallerReportContent({
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
   const [selectedStatus] = useState<string>("");
   const [tempDateRange, setTempDateRange] = useState<DateRangeFilter | undefined>();
-  
+
 
   const [sortBy, setSortBy] = useState<"name" | "enquiries" | "conversion">(
     "conversion"
@@ -72,36 +73,36 @@ export function TelecallerReportContent({
     userId,
   });
 
-const fetchReportData = useCallback(async () => {
-  filtersRef.current = {
-    dateRange,
-    selectedBranch,
-    selectedStatus,
-    searchTerm,
-    userRole,
-    userId,
-  };
+  const fetchReportData = useCallback(async () => {
+    filtersRef.current = {
+      dateRange,
+      selectedBranch,
+      selectedStatus,
+      searchTerm,
+      userRole,
+      userId,
+    };
 
-  console.log("fetch using filters:", filtersRef.current);
+    console.log("fetch using filters:", filtersRef.current);
 
-  try {
-    setLoading(true);
-    setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-    const result = await getTelecallerPerformanceReport(filtersRef.current);
+      const result = await getTelecallerPerformanceReport(filtersRef.current);
 
-    if (result?.data) {
-      setReportData(result.data);
-    } else {
-      setError("Failed to load telecaller report data");
+      if (result?.data) {
+        setReportData(result.data);
+      } else {
+        setError("Failed to load telecaller report data");
+      }
+    } catch (err) {
+      setError("An error occurred while loading the report");
+      console.error("Error fetching telecaller report:", err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    setError("An error occurred while loading the report");
-    console.error("Error fetching telecaller report:", err);
-  } finally {
-    setLoading(false);
-  }
-}, [dateRange, selectedBranch, selectedStatus, searchTerm, userRole, userId]);
+  }, [dateRange, selectedBranch, selectedStatus, searchTerm, userRole, userId]);
 
 
   const handleExportCSV = async () => {
@@ -138,7 +139,7 @@ const fetchReportData = useCallback(async () => {
 
   useEffect(() => {
     fetchReportData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -183,7 +184,7 @@ const fetchReportData = useCallback(async () => {
   });
 
   if (loading) {
-    return <div>Loading...</div>; // Will be replaced with skeleton
+    return <TelecallerReportSkeleton />;
   }
 
   if (error) {
@@ -259,8 +260,8 @@ const fetchReportData = useCallback(async () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2 w-full sm:w-[240px]">
               <label className="text-sm font-medium">Search Telecaller</label>
               <div className="relative">
                 <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -273,30 +274,28 @@ const fetchReportData = useCallback(async () => {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-auto flex-1 min-w-[300px]">
               <label className="text-sm font-medium">Date Range</label>
-              <DatePickerWithRange
-  value={tempDateRange}
-  onChange={setTempDateRange}
-/>
-
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium invisible">Apply</label>
-              <Button
-  variant="default"
-  onClick={() => {
-    setDateRange(tempDateRange);
-    fetchReportData();
-  }}
-  className="w-full"
->
-  Apply Date Range
-</Button>
-
+              <div className="flex gap-2">
+                <DatePickerWithRange
+                  value={tempDateRange}
+                  onChange={setTempDateRange}
+                  className="flex-1"
+                />
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setDateRange(tempDateRange);
+                    fetchReportData();
+                  }}
+                  className="shrink-0"
+                >
+                  Apply
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[200px]">
               <label className="text-sm font-medium">Branch</label>
               <Select value={selectedBranch} onValueChange={setSelectedBranch}>
                 <SelectTrigger>
@@ -311,7 +310,7 @@ const fetchReportData = useCallback(async () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[160px]">
               <label className="text-sm font-medium">Sort By</label>
               <Select
                 value={sortBy}
@@ -330,7 +329,7 @@ const fetchReportData = useCallback(async () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[120px]">
               <label className="text-sm font-medium">Order</label>
               <Select
                 value={sortOrder}
@@ -391,13 +390,13 @@ const fetchReportData = useCallback(async () => {
             <div className="text-2xl font-bold">
               {reportData.performance.length > 0
                 ? Math.round(
-                    (reportData.performance.reduce(
-                      (sum, p) => sum + p.conversionRate,
-                      0
-                    ) /
-                      reportData.performance.length) *
-                      10
-                  ) / 10
+                  (reportData.performance.reduce(
+                    (sum, p) => sum + p.conversionRate,
+                    0
+                  ) /
+                    reportData.performance.length) *
+                  10
+                ) / 10
                 : 0}
               %
             </div>
@@ -465,8 +464,8 @@ const fetchReportData = useCallback(async () => {
                             telecaller.conversionRate >= 20
                               ? "default"
                               : telecaller.conversionRate >= 10
-                              ? "secondary"
-                              : "outline"
+                                ? "secondary"
+                                : "outline"
                           }
                           className="text-sm"
                         >
@@ -710,8 +709,8 @@ const fetchReportData = useCallback(async () => {
                               telecaller.conversionRate >= 20
                                 ? "default"
                                 : telecaller.conversionRate >= 10
-                                ? "secondary"
-                                : "outline"
+                                  ? "secondary"
+                                  : "outline"
                             }
                           >
                             {telecaller.conversionRate}%

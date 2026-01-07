@@ -173,7 +173,7 @@ export function AdmissionPaymentReportContent() {
     }, 400);
 
     return () => clearTimeout(timeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.search]);
 
   if (loading) {
@@ -291,8 +291,8 @@ export function AdmissionPaymentReportContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2 w-full sm:w-[240px]">
               <label className="text-sm font-medium">Search Student</label>
               <div className="relative">
                 <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -306,24 +306,27 @@ export function AdmissionPaymentReportContent() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
+
+            <div className="space-y-2 w-full sm:w-auto flex-1 min-w-[300px]">
               <label className="text-sm font-medium">Date Range</label>
               <div className="flex gap-2">
                 <DatePickerWithRange
                   value={filters.dateRange}
                   onChange={handleDateRangeChange}
+                  className="flex-1"
                 />
                 <Button
                   variant="default"
                   onClick={fetchReportData}
                   disabled={loading}
+                  className="shrink-0"
                 >
                   Apply
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[200px]">
               <label className="text-sm font-medium">Payment Status</label>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger>
@@ -339,7 +342,7 @@ export function AdmissionPaymentReportContent() {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[160px]">
               <label className="text-sm font-medium">Sort By</label>
               <Select
                 value={sortBy}
@@ -360,7 +363,7 @@ export function AdmissionPaymentReportContent() {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[120px]">
               <label className="text-sm font-medium">Order</label>
               <Select
                 value={sortOrder}

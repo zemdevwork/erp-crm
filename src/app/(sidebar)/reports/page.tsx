@@ -179,8 +179,8 @@ export default async function ReportsPage() {
                         card.trend.type === 'up'
                           ? 'text-green-600 font-medium'
                           : card.trend.type === 'down'
-                          ? 'text-red-600 font-medium'
-                          : 'text-muted-foreground'
+                            ? 'text-red-600 font-medium'
+                            : 'text-muted-foreground'
                       }
                     >
                       {card.trend.value}
@@ -190,15 +190,14 @@ export default async function ReportsPage() {
                 )}
               </CardContent>
               <div
-                className={`absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r ${
-                  card.color === 'blue'
+                className={`absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r ${card.color === 'blue'
                     ? 'from-blue-500 to-blue-600'
                     : card.color === 'green'
-                    ? 'from-green-500 to-green-600'
-                    : card.color === 'emerald'
-                    ? 'from-emerald-500 to-emerald-600'
-                    : 'from-red-500 to-red-600'
-                }`}
+                      ? 'from-green-500 to-green-600'
+                      : card.color === 'emerald'
+                        ? 'from-emerald-500 to-emerald-600'
+                        : 'from-red-500 to-red-600'
+                  }`}
               />
             </Card>
           ))}
@@ -216,41 +215,41 @@ export default async function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-6">
-              <Button variant="outline" className="justify-start" asChild>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" className="h-auto py-2 justify-start sm:w-auto w-full" asChild>
                 <Link href="/reports/telecaller">
-                  <IconUsers className="h-4 w-4 mr-2" />
-                  Telecaller Report
+                  <IconUsers className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">Telecaller Report</span>
                 </Link>
               </Button>
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="h-auto py-2 justify-start sm:w-auto w-full" asChild>
                 <Link href="/reports/branch">
-                  <IconBuilding className="h-4 w-4 mr-2" />
-                  Branch Analytics
+                  <IconBuilding className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">Branch Analytics</span>
                 </Link>
               </Button>
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="h-auto py-2 justify-start sm:w-auto w-full" asChild>
                 <Link href="/reports/admission-payment">
-                  <IconCash className="h-4 w-4 mr-2" />
-                  Payments
+                  <IconCash className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">Payments</span>
                 </Link>
               </Button>
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="h-auto py-2 justify-start sm:w-auto w-full" asChild>
                 <Link href="/reports/expense">
-                  <IconReceipt className="h-4 w-4 mr-2" />
-                  Expenses
+                  <IconReceipt className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">Expenses</span>
                 </Link>
               </Button>
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="h-auto py-2 justify-start sm:w-auto w-full" asChild>
                 <Link href="/reports/income">
-                  <IconTrendingUp className="h-4 w-4 mr-2" />
-                  Income
+                  <IconTrendingUp className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">Income</span>
                 </Link>
               </Button>
-              <Button variant="outline" className="justify-start" asChild>
+              <Button variant="outline" className="h-auto py-2 justify-start sm:w-auto w-full" asChild>
                 <Link href="/reports/pending-payment">
-                  <IconAlertTriangle className="h-4 w-4 mr-2" />
-                  Pending
+                  <IconAlertTriangle className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">Pending</span>
                 </Link>
               </Button>
             </div>

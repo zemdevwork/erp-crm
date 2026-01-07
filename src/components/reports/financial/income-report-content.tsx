@@ -162,19 +162,19 @@ export function IncomeReportContent() {
     URL.revokeObjectURL(url);
   };
 
-useEffect(() => {
-  fetchReportData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [])
+  useEffect(() => {
+    fetchReportData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-useEffect(() => {
-  if (!searchTerm) return;
-  const timeout = setTimeout(() => {
-    fetchReportData();
-  }, 400);
-  return () => clearTimeout(timeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [searchTerm])
+  useEffect(() => {
+    if (!searchTerm) return;
+    const timeout = setTimeout(() => {
+      fetchReportData();
+    }, 400);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm])
 
   // Get unique sources and payment methods for filtering
   const sources = reportData?.sources.map((s) => s.source) || [];
@@ -298,8 +298,8 @@ useEffect(() => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2 w-full sm:w-[240px]">
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
                 <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -312,29 +312,28 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-auto flex-1 min-w-[300px]">
               <label className="text-sm font-medium">Date Range</label>
-              <DatePickerWithRange
-                value={tempDateRange}
-                onChange={setTempDateRange}
-              />
+              <div className="flex gap-2">
+                <DatePickerWithRange
+                  value={tempDateRange}
+                  onChange={setTempDateRange}
+                  className="flex-1"
+                />
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setDateRange(tempDateRange);
+                    fetchReportData();
+                  }}
+                  className="shrink-0"
+                >
+                  Apply
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium invisible">Apply</label>
-              <Button
-                variant="default"
-                onClick={() => {
-                  setDateRange(tempDateRange);
-                  fetchReportData();
-                }}
-                className="w-full"
-              >
-                Apply Date Range
-              </Button>
-            </div>
-
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[200px]">
               <label className="text-sm font-medium">Service Category</label>
               <Select value={selectedSource} onValueChange={setSelectedSource}>
                 <SelectTrigger>
@@ -351,7 +350,7 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[160px]">
               <label className="text-sm font-medium">Sort By</label>
               <Select
                 value={sortBy}
@@ -370,7 +369,7 @@ useEffect(() => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-[120px]">
               <label className="text-sm font-medium">Order</label>
               <Select
                 value={sortOrder}
@@ -584,13 +583,12 @@ useEffect(() => {
                       {/* Growth indicator */}
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            month.growth > 0
+                          className={`h-2 rounded-full transition-all duration-300 ${month.growth > 0
                               ? "bg-green-600"
                               : month.growth < 0
-                              ? "bg-red-600"
-                              : "bg-gray-400"
-                          }`}
+                                ? "bg-red-600"
+                                : "bg-gray-400"
+                            }`}
                           style={{
                             width: `${Math.min(
                               Math.abs(month.growth) * 2,
@@ -688,17 +686,17 @@ useEffect(() => {
 
                 {(!reportData.detailedTransactions ||
                   reportData.detailedTransactions.length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <IconFileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      No Transaction Data
-                    </h3>
-                    <p className="text-sm">
-                      No paid invoice transactions found for the selected
-                      period.
-                    </p>
-                  </div>
-                )}
+                    <div className="text-center py-8 text-muted-foreground">
+                      <IconFileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        No Transaction Data
+                      </h3>
+                      <p className="text-sm">
+                        No paid invoice transactions found for the selected
+                        period.
+                      </p>
+                    </div>
+                  )}
               </div>
             </CardContent>
           </Card>

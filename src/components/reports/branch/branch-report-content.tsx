@@ -136,7 +136,7 @@ export function BranchReportContent({ }: BranchReportContentProps) {
     )
   }
 
-    const totalEnquiries = reportData.performance.reduce((sum, branch) => sum + branch.totalEnquiries, 0)
+  const totalEnquiries = reportData.performance.reduce((sum, branch) => sum + branch.totalEnquiries, 0)
   const totalRevenue = reportData.performance.reduce((sum, branch) => sum + branch.totalRevenue, 0)
   const averageConversion = reportData.performance.length > 0
     ? reportData.performance.reduce((sum, branch) => sum + branch.conversionRate, 0) / reportData.performance.length
@@ -173,8 +173,8 @@ export function BranchReportContent({ }: BranchReportContentProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-2 w-full sm:w-[300px]">
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
                 <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -186,15 +186,15 @@ export function BranchReportContent({ }: BranchReportContentProps) {
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-auto flex-1 min-w-[300px]">
               <label className="text-sm font-medium">Date Range</label>
               <DatePickerWithRange
                 value={filters.dateRange}
                 onChange={handleDateRangeChange}
               />
             </div>
-            <div className="flex items-end">
-              <Button onClick={handleApplyFilters} className="w-full">
+            <div className="flex items-end w-full sm:w-auto">
+              <Button onClick={handleApplyFilters} className="w-full sm:w-auto">
                 Apply Filters
               </Button>
             </div>

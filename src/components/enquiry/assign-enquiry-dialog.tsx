@@ -220,7 +220,7 @@ export function AssignEnquiryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{isBulk ? 'Bulk Assign Enquiries' : 'Assign Enquiry'}</DialogTitle>
           <DialogDescription>
@@ -232,7 +232,7 @@ export function AssignEnquiryDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2 overflow-y-auto flex-1 pr-2">
           {/* Job Details */}
           <div className="grid gap-4">
             <div className="space-y-2">
@@ -269,47 +269,47 @@ export function AssignEnquiryDialog({
             />
           </div>
 
-            {/* User */}
-            <div className="space-y-2">
-              <Label htmlFor="assignee">User *</Label>
-              <Select
-                value={selectedUserId ?? ''}
-                onValueChange={(value) => setSelectedUserId(value)}
-                disabled={
-                  isAssigning ||
-                  isLoadingUsers ||
-                  !fixedBranchId ||
-                  availableUsers.length === 0
-                }
-              >
-                <SelectTrigger id="assignee">
-                  <SelectValue
-                    placeholder={
-                      isLoadingUsers
-                        ? 'Loading...'
-                        : !fixedBranchId
-                          ? 'Missing branch context'
-                          : availableUsers.length === 0
-                            ? 'No users'
-                            : 'Select user'
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* User */}
+          <div className="space-y-2">
+            <Label htmlFor="assignee">User *</Label>
+            <Select
+              value={selectedUserId ?? ''}
+              onValueChange={(value) => setSelectedUserId(value)}
+              disabled={
+                isAssigning ||
+                isLoadingUsers ||
+                !fixedBranchId ||
+                availableUsers.length === 0
+              }
+            >
+              <SelectTrigger id="assignee">
+                <SelectValue
+                  placeholder={
+                    isLoadingUsers
+                      ? 'Loading...'
+                      : !fixedBranchId
+                        ? 'Missing branch context'
+                        : availableUsers.length === 0
+                          ? 'No users'
+                          : 'Select user'
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {availableUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
 
           {/* Date Selection */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="start-date">Start Date *</Label> 
+              <Label htmlFor="start-date">Start Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -384,37 +384,38 @@ export function AssignEnquiryDialog({
             />
           </div>
 
-          {/* Action Button */}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isAssigning}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAssignUser}
-              disabled={
-                isAssigning ||
-                !selectedUserId ||
-                !startDate ||
-                !endDate ||
-                !fixedBranchId ||
-                !jobName.trim()
-              }
-            >
-              {isAssigning ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Assigning...
-                </>
-              ) : (
-                'Assign'
-              )}
-            </Button>
-          </div>
         </div>
+        {/* Action Button */}
+        <div className="flex justify-end gap-2 pt-2 mt-auto">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isAssigning}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAssignUser}
+            disabled={
+              isAssigning ||
+              !selectedUserId ||
+              !startDate ||
+              !endDate ||
+              !fixedBranchId ||
+              !jobName.trim()
+            }
+          >
+            {isAssigning ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Assigning...
+              </>
+            ) : (
+              'Assign'
+            )}
+          </Button>
+        </div>
+
       </DialogContent>
     </Dialog>
   );
