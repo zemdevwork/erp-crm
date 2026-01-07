@@ -84,8 +84,8 @@ export const createEnquiry = action.schema(createEnquirySchema).action(async ({ 
         requiredService: parsedInput.requiredServiceId
           ? { connect: { id: parsedInput.requiredServiceId } }
           : undefined,
-        // Auto-assign to current user
-        assignedTo: { connect: { id: user.id } },
+        // Auto-assign to current user - REMOVED per request
+        // assignedTo: { connect: { id: user.id } },
         createdBy: { connect: { id: user.id } },
       },
       include: {

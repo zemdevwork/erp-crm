@@ -164,7 +164,7 @@ export function EnquiryFormDialog({
       notes: enquiry?.notes || "",
       feedback: enquiry?.feedback || "",
       enquirySourceId: enquiry?.enquirySourceId || "",
-      branchId: enquiry?.branchId || userBranch || undefined,
+      branchId: enquiry?.branchId || undefined,
 
       preferredCourseId: enquiry?.preferredCourseId || "",
       requiredServiceId: enquiry?.requiredServiceId || "",
@@ -174,7 +174,7 @@ export function EnquiryFormDialog({
   // Update form values when enquiry changes (for edit mode) or when user data loads
   useEffect(() => {
     const shouldReset = enquiry && isEditMode;
-    const defaultBranchId = enquiry?.branchId || userBranch || "";
+    const defaultBranchId = enquiry?.branchId || "";
 
     if (shouldReset || (!enquiry && userBranch)) {
       form.reset({
@@ -243,7 +243,7 @@ export function EnquiryFormDialog({
     setIsProcessingAction(true);
 
     // Use user's branch if they have one and no branch is selected
-    const finalBranchId = data.branchId || userBranch;
+    const finalBranchId = data.branchId;
 
     // Ensure branchId is always a string for create action
     if (isEditMode && !finalBranchId) {
