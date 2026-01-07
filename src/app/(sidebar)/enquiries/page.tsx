@@ -251,7 +251,7 @@ export default function EnquiriesPage() {
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Enquiries</h1>
           <p className="text-gray-600">Manage and track all customer enquiries</p>
@@ -277,7 +277,7 @@ export default function EnquiriesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4">
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input

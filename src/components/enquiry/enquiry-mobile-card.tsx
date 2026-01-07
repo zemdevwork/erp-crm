@@ -4,13 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Phone, Mail,
   Eye,
   Edit,
@@ -61,119 +54,113 @@ export function EnquiryMobileCard({ enquiry, onView, onEdit, onDelete }: Enquiry
 
   return (
     <Card className="w-full">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg text-gray-900 mb-1">
+      <CardContent className="p-3">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-base text-gray-900 truncate">
               {enquiry.candidateName}
             </h3>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge className={getStatusColor(enquiry.status)}>
-                {ENQUIRY_STATUS_OPTIONS.find((opt) => opt.value === enquiry.status)?.label || enquiry.status}
-              </Badge>
-            </div>
+            <Badge className={`mt-1 text-xs px-2 py-0.5 ${getStatusColor(enquiry.status)}`}>
+              {ENQUIRY_STATUS_OPTIONS.find((opt) => opt.value === enquiry.status)?.label || enquiry.status}
+            </Badge>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => onView(enquiry.id)} className="cursor-pointer">
-                <Eye className="mr-2 h-4 w-4" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(enquiry)} className="cursor-pointer">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(enquiry.id, enquiry.candidateName)}
-                className="cursor-pointer text-red-600"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
           <Button
             size="icon"
             variant="outline"
-            className="flex-1"
+            className="h-8 w-8 shrink-0"
             onClick={() => handleCall(enquiry.phone)}
+            title="Call"
           >
-            <Phone className="size-4" />
+            <Phone className="h-4 w-4" />
           </Button>
           <Button
             size="icon"
             variant="outline"
-            className="flex-1"
+            className="h-8 w-8 shrink-0"
             onClick={() => handleWhatsApp(enquiry.phone)}
+            title="WhatsApp"
           >
-            <IconBrandWhatsapp className="size-4" />
+            <IconBrandWhatsapp className="h-4 w-4" />
           </Button>
           {enquiry.email && (
             <Button
               size="icon"
               variant="outline"
-              className="flex-1"
+              className="h-8 w-8 shrink-0"
               onClick={() => handleEmail(enquiry.email)}
+              title="Email"
             >
-              <Mail className="size-4" />
+              <Mail className="h-4 w-4" />
             </Button>
           )}
+          <div className="w-px h-6 bg-gray-200 mx-1 shrink-0" />
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 shrink-0 hover:bg-muted"
+            onClick={() => onView(enquiry.id)}
+            title="View Details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 shrink-0 hover:bg-muted"
+            onClick={() => onEdit(enquiry)}
+            title="Edit"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 shrink-0 hover:bg-red-50 text-red-600 hover:text-red-700"
+            onClick={() => onDelete(enquiry.id, enquiry.candidateName)}
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Contact Information */}
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-gray-500" />
-            <span className="font-mono">{enquiry.phone}</span>
-          </div>
-          {enquiry.contact2 && (
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-gray-500" />
-              <span className="font-mono text-muted-foreground">{enquiry.contact2}</span>
-            </div>
-          )}
-          {enquiry.email && (
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-500" />
-              <span className="text-muted-foreground">{enquiry.email}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Additional Information */}
-        <div className="mt-4 pt-3 border-t border-gray-100 space-y-2 text-sm">
-          {enquiry.preferredCourse && (
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-gray-500" />
-              <span>{enquiry.preferredCourse.name}</span>
-            </div>
-          )}
-          {enquiry.enquirySource && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              <span>{enquiry.enquirySource.name}</span>
-            </div>
-          )}
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs text-muted-foreground border-t border-gray-100 pt-2">
           {enquiry.assignedTo && (
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-gray-500" />
-              <span>{enquiry.assignedTo.name}</span>
+            <div className="flex items-center gap-1.5 col-span-2">
+              <User className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Assigned to: <span className="font-medium text-gray-700">{enquiry.assignedTo.name}</span></span>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span>{formatDate(enquiry.createdAt)}</span>
+          
+          {enquiry.preferredCourse && (
+            <div className="flex items-center gap-1.5 col-span-2">
+              <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{enquiry.preferredCourse.name}</span>
+            </div>
+          )}
+          
+          {enquiry.contact2 && (
+             <div className="flex items-center gap-1.5">
+              <Phone className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-mono">{enquiry.contact2}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
+              <span>{formatDate(enquiry.createdAt)}</span>
           </div>
+          
+          {enquiry.enquirySource && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{enquiry.enquirySource.name}</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

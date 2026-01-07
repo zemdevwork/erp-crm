@@ -63,6 +63,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Progress } from '@/components/ui/progress';
+import { JobOrderMobileCard } from '@/components/enquiry/job-order-mobile-card';
 
 interface JobOrder {
   id: string;
@@ -215,14 +216,14 @@ export default function PendingJobOrdersClient({
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Remaining Jobs List</h1>
           <p className="text-gray-600">Manage Jobs List</p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
         {/* Branch Filter (Admin Only) */}
         {isAdmin && (
           <div className="flex flex-col gap-2">
@@ -286,78 +287,94 @@ function filteredJobOrdersTable(
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Job ID</TableHead>
-            <TableHead>Branch</TableHead>
-            <TableHead>Job Name</TableHead>
-            <TableHead>Leads</TableHead>
-            <TableHead>Counselor</TableHead>
-            <TableHead>Assigned By</TableHead>
-            <TableHead>Date Period</TableHead>
-            <TableHead>Progress</TableHead>
-            <TableHead>Remarks</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <>
+      {isMobile ? (
+        <div className="space-y-4 p-4">
           {jobOrders.map((job) => (
-            <TableRow key={job.id}>
-              <TableCell>{job.id.slice(-6)}</TableCell>
-              <TableCell>{job.branch.name}</TableCell>
-              <TableCell className="font-medium">{job.name}</TableCell>
-              <TableCell>{job._count?.jobLeads || 0}</TableCell>
-              <TableCell>{job.manager.name}</TableCell>
-              <TableCell>{job.assigner?.name || '-'}</TableCell>
-              <TableCell>
-                {formatDate(job.startDate)} To {formatDate(job.endDate)}
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Progress value={job.progress} className="w-[60px]" />
-                  <span className="text-xs">{job.progress}%</span>
-                </div>
-              </TableCell>
-              <TableCell>{job.remarks || '-'}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleViewJobOrder(job.id)}>
-                    <Eye className="h-4 w-4 text-blue-500" />
-                  </Button>
-
-                  {(isAdmin) && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the job order
-                            and remove all associated data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteJobOrder(job.id)} className="bg-red-600 hover:bg-red-700">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
+            <JobOrderMobileCard
+              key={job.id}
+              jobOrder={job}
+              onView={handleViewJobOrder}
+              onDelete={handleDeleteJobOrder}
+              isAdmin={isAdmin}
+            />
           ))}
-        </TableBody>
-      </Table>
-    </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Job ID</TableHead>
+                <TableHead>Branch</TableHead>
+                <TableHead>Job Name</TableHead>
+                <TableHead>Leads</TableHead>
+                <TableHead>Counselor</TableHead>
+                <TableHead>Assigned By</TableHead>
+                <TableHead>Date Period</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead>Remarks</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {jobOrders.map((job) => (
+                <TableRow key={job.id}>
+                  <TableCell>{job.id.slice(-6)}</TableCell>
+                  <TableCell>{job.branch.name}</TableCell>
+                  <TableCell className="font-medium">{job.name}</TableCell>
+                  <TableCell>{job._count?.jobLeads || 0}</TableCell>
+                  <TableCell>{job.manager.name}</TableCell>
+                  <TableCell>{job.assigner?.name || '-'}</TableCell>
+                  <TableCell>
+                    {formatDate(job.startDate)} To {formatDate(job.endDate)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Progress value={job.progress} className="w-[60px]" />
+                      <span className="text-xs">{job.progress}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{job.remarks || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleViewJobOrder(job.id)}>
+                        <Eye className="h-4 w-4 text-blue-500" />
+                      </Button>
+
+                      {(isAdmin) && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the job order
+                                and remove all associated data.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteJobOrder(job.id)} className="bg-red-600 hover:bg-red-700">
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </>
   );
 }
 
