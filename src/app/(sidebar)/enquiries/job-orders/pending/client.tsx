@@ -38,7 +38,26 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
-import { Search, Eye, MoreVertical, ChevronLeft, ChevronRight, Trash2, UserPlus } from 'lucide-react';
+import {
+  Search,
+  Filter,
+  Eye,
+  Trash2,
+  MoreHorizontal,
+  Briefcase,
+  UserPlus
+} from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { getJobOrders, deleteJobOrder, reassignJobOrder } from '@/server/actions/job-order';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -309,15 +328,28 @@ function filteredJobOrdersTable(
                   </Button>
 
                   {(isAdmin) && (
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleDeleteJobOrder(job.id)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  )}
-
-                  {(isAdmin) && (
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleDeleteJobOrder(job.id)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the job order
+                            and remove all associated data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteJobOrder(job.id)} className="bg-red-600 hover:bg-red-700">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </TableCell>

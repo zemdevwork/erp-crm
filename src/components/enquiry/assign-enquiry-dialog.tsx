@@ -56,12 +56,9 @@ export function AssignEnquiryDialog({
   type AssignableUser = User & { branch?: string | null };
 
   const [users, setUsers] = useState<AssignableUser[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [jobName, setJobName] = useState('');
@@ -74,6 +71,13 @@ export function AssignEnquiryDialog({
     }
   }, [open]);
 
+  useEffect(() => {
+    if (open && fixedBranchId) {
+      fetchUsers(fixedBranchId);
+    }
+    console.log(fixedBranchId)
+  }, [open, fixedBranchId]);
+
   const initializeDialog = async () => {
     setSelectedUserId(null);
     setStartDate(undefined);
@@ -81,40 +85,13 @@ export function AssignEnquiryDialog({
     setJobName('');
     setDescription('');
     setRemarks('');
-    
-    if (fixedBranchId) {
-      setSelectedBranchId(fixedBranchId);
-    } else {
-      await fetchBranches();
-    }
+    setUsers([]);
   };
 
-  const fetchBranches = async () => {
-    // Skip fetching if fixed branch is provided
-    if (fixedBranchId) return;
-
-    setIsLoadingBranches(true);
-    try {
-      const result = await getAllBranches();
-      if (result.success) {
-        const branchList = (result.data as Branch[]) || [];
-        setBranches(branchList);
-        const defaultBranchId = branchList[0]?.id || '';
-        setSelectedBranchId(defaultBranchId);
-        if (!defaultBranchId) {
-          setUsers([]);
-        }
-      } else {
-        toast.error(result.message || 'Failed to fetch branches');
-      }
-    } catch {
-      toast.error('Failed to fetch branches');
-    } finally {
-      setIsLoadingBranches(false);
-    }
-  };
+  // Branch fetching removed entirely.
 
   const fetchUsers = async (branchId?: string) => {
+    if (!branchId) return;
     setIsLoadingUsers(true);
     try {
       const result = await getUsers(branchId);
@@ -129,12 +106,6 @@ export function AssignEnquiryDialog({
       setIsLoadingUsers(false);
     }
   };
-
-  useEffect(() => {
-    if (open && selectedBranchId) {
-      fetchUsers(selectedBranchId);
-    }
-  }, [open, selectedBranchId]);
 
   const handleSelectUser = (userId: string) => {
     setSelectedUserId(userId);
@@ -157,8 +128,8 @@ export function AssignEnquiryDialog({
   });
 
   const handleAssignUser = async () => {
-    if (!selectedBranchId) {
-      toast.error('Please select a branch');
+    if (!fixedBranchId) {
+      toast.error('Branch context missing. Cannot assign.');
       return;
     }
 
@@ -207,7 +178,7 @@ export function AssignEnquiryDialog({
           selectedUserId,
           startDate,
           endDate,
-          selectedBranchId,
+          fixedBranchId, // Use prop directly
           jobName.trim(),
           description || null,
           remarks || null
@@ -219,7 +190,7 @@ export function AssignEnquiryDialog({
           selectedUserId,
           startDate,
           endDate,
-          selectedBranchId,
+          fixedBranchId, // Use prop directly
           jobName.trim(),
           description || null,
           remarks || null
@@ -287,12 +258,12 @@ export function AssignEnquiryDialog({
             </div>
           </div>
 
-          {/* Branch */}
+          {/* Branch - Read Only View */}
           <div className="space-y-2">
             <Label htmlFor="branch">Branch</Label>
             <Input
               id="branch"
-              value={fixedBranchName || branches.find(b => b.id === selectedBranchId)?.name || 'Loading...'}
+              value={fixedBranchName}
               disabled
               className="bg-muted text-muted-foreground"
             />
@@ -307,7 +278,7 @@ export function AssignEnquiryDialog({
                 disabled={
                   isAssigning ||
                   isLoadingUsers ||
-                  !selectedBranchId ||
+                  !fixedBranchId ||
                   availableUsers.length === 0
                 }
               >
@@ -316,8 +287,8 @@ export function AssignEnquiryDialog({
                     placeholder={
                       isLoadingUsers
                         ? 'Loading...'
-                        : !selectedBranchId
-                          ? 'Select branch'
+                        : !fixedBranchId
+                          ? 'Missing branch context'
                           : availableUsers.length === 0
                             ? 'No users'
                             : 'Select user'
@@ -429,7 +400,7 @@ export function AssignEnquiryDialog({
                 !selectedUserId ||
                 !startDate ||
                 !endDate ||
-                !selectedBranchId ||
+                !fixedBranchId ||
                 !jobName.trim()
               }
             >
