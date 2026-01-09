@@ -16,6 +16,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // As per user request: "Generate token with empty payload"
 const generateAuthToken = () => {
     try {
+        if (!JWT_SECRET) {
+            throw new Error("JWT_SECRET is not defined in environment variables");
+        }
         const token = jwt.sign({}, JWT_SECRET);
         return token;
     } catch (error) {
