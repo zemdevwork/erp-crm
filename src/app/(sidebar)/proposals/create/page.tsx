@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { createProposal } from '@/server/actions/proposal/proposal-actions';
 
 const proposalItemSchema = z.object({
     description: z.string().min(1, 'Description is required'),
@@ -55,13 +56,16 @@ export default function CreateProposalPage() {
     const onSubmit = async (data: ProposalFormValues) => {
         setIsSubmitting(true);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('Form Data:', data);
-            toast.success('Proposal created successfully!');
-            router.push('/proposals');
+            const res = await createProposal(data);
+            if (res?.data?.success) {
+                toast.success('Proposal created successfully!');
+                router.push('/proposals');
+            } else {
+                toast.error(res?.data?.message || 'Failed to create proposal');
+            }
         } catch (error) {
-            toast.error('Failed to create proposal');
+            toast.error('An unexpected error occurred');
+            console.error(error);
         } finally {
             setIsSubmitting(false);
         }

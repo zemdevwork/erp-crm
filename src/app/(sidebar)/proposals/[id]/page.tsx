@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,32 +10,38 @@ import { ArrowLeft, Edit, FileText, Trash2, Send, CheckCircle, XCircle } from 'l
 import { ProposalStatus, Proposal } from '@/types/proposal';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
-
-// Mock Data for View
-const MOCK_PROPOSAL: Proposal = {
-    id: '1',
-    proposalNo: 'PROP-2024-0001',
-    clientName: 'Acme Corp',
-    clientEmail: 'contact@acme.com',
-    clientPhone: '123-456-7890',
-    status: ProposalStatus.DRAFT,
-    totalAmount: 5000,
-    createdByUser: 'John Doe',
-    items: [
-        { id: '1', proposalId: '1', description: 'Web Development', quantity: 1, unitPrice: 3000, total: 3000 },
-        { id: '2', proposalId: '1', description: 'SEO Optimization', quantity: 1, unitPrice: 2000, total: 2000 },
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-};
+import { getProposalById, updateProposal, deleteProposal } from '@/server/actions/proposal/proposal-actions';
 
 export default function ProposalDetailPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id as string;
+    const [proposal, setProposal] = useState<Proposal | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // In a real app, fetch proposal by id. Here we just use the mock.
-    const proposal = MOCK_PROPOSAL; // We'd simulate fetching here
+    const fetchProposal = async () => {
+        setIsLoading(true);
+        try {
+            const res = await getProposalById({ id });
+            if (res?.data?.success && res.data.data) {
+                setProposal(res.data.data);
+            } else {
+                toast.error(res?.data?.message || 'Failed to fetch proposal');
+                // router.push('/proposals');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('An error occurred');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (id) {
+            fetchProposal();
+        }
+    }, [id]);
 
     const getStatusColor = (status: ProposalStatus) => {
         switch (status) {
@@ -51,10 +58,44 @@ export default function ProposalDetailPage() {
         }
     };
 
-    const handleStatusChange = (newStatus: ProposalStatus) => {
-        toast.success(`Status updated to ${newStatus}`);
-        // Update local state if needed
+    const handleStatusChange = async (newStatus: ProposalStatus) => {
+        try {
+            const res = await updateProposal({ id, status: newStatus });
+            if (res?.data?.success) {
+                toast.success(`Status updated to ${newStatus}`);
+                fetchProposal();
+            } else {
+                toast.error(res?.data?.message || 'Failed to update status');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to update status');
+        }
     };
+
+    const handleDelete = async () => {
+        if (!confirm('Are you sure you want to delete this proposal?')) return;
+        try {
+            const res = await deleteProposal({ id });
+            if (res?.data?.success) {
+                toast.success("Proposal deleted");
+                router.push('/proposals');
+            } else {
+                toast.error(res?.data?.message || "Failed to delete");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("An error occurred");
+        }
+    };
+
+    if (isLoading) {
+        return <div className="p-6 text-center text-gray-500">Loading proposal details...</div>;
+    }
+
+    if (!proposal) {
+        return <div className="p-6 text-center text-red-500">Proposal not found</div>;
+    }
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 max-w-5xl mx-auto w-full">
@@ -72,7 +113,7 @@ export default function ProposalDetailPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => toast.info('Generating PDF...')}>
+                    <Button variant="outline" onClick={() => toast.info('Generating PDF (mock)...')}>
                         <FileText className="mr-2 h-4 w-4" />
                         PDF
                     </Button>
@@ -122,21 +163,27 @@ export default function ProposalDetailPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="[&_tr:last-child]:border-0">
-                                        {proposal.items.map((item) => (
-                                            <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
-                                                <td className="p-4 align-middle">{item.description}</td>
-                                                <td className="p-4 align-middle text-right">{item.quantity}</td>
-                                                <td className="p-4 align-middle text-right">{formatCurrency(item.unitPrice)}</td>
-                                                <td className="p-4 align-middle text-right">{formatCurrency(item.total)}</td>
+                                        {proposal.items && proposal.items.length > 0 ? (
+                                            proposal.items.map((item) => (
+                                                <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
+                                                    <td className="p-4 align-middle">{item.description}</td>
+                                                    <td className="p-4 align-middle text-right">{item.quantity}</td>
+                                                    <td className="p-4 align-middle text-right">{formatCurrency(item.unitPrice)}</td>
+                                                    <td className="p-4 align-middle text-right">{formatCurrency(item.total || (item.quantity * item.unitPrice))}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={4} className="p-4 text-center text-muted-foreground">No items found</td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
                             <div className="flex justify-end p-4">
                                 <div className="flex gap-8 text-lg font-semibold">
                                     <span>Total</span>
-                                    <span>{formatCurrency(proposal.totalAmount)}</span>
+                                    <span>{formatCurrency(proposal.totalAmount || 0)}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -177,7 +224,7 @@ export default function ProposalDetailPage() {
                         <CardContent className="space-y-4">
                             <div>
                                 <div className="text-sm font-medium text-gray-500">Proposal ID</div>
-                                <div className="text-sm font-mono text-muted-foreground">{id}</div>
+                                <div className="text-sm font-mono text-muted-foreground">{proposal.id}</div>
                             </div>
                             <div>
                                 <div className="text-sm font-medium text-gray-500">Created By</div>
@@ -193,10 +240,7 @@ export default function ProposalDetailPage() {
                     <Button
                         variant="ghost"
                         className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => {
-                            toast.success("Proposal deleted");
-                            router.push('/proposals');
-                        }}
+                        onClick={handleDelete}
                     >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete Proposal

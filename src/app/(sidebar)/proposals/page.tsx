@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,65 +25,45 @@ import { Search, Filter, Eye, Edit, Trash2, MoreVertical, Plus, FileText } from 
 import { Proposal, ProposalStatus } from '@/types/proposal';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
-
-// Mock Data
-const MOCK_PROPOSALS: Proposal[] = [
-    {
-        id: '1',
-        proposalNo: 'PROP-2024-0001',
-        clientName: 'Acme Corp',
-        clientEmail: 'contact@acme.com',
-        clientPhone: '123-456-7890',
-        status: ProposalStatus.DRAFT,
-        totalAmount: 5000,
-        createdByUser: 'John Doe',
-        items: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    },
-    {
-        id: '2',
-        proposalNo: 'PROP-2024-0002',
-        clientName: 'Globex Inc',
-        clientEmail: 'info@globex.com',
-        status: ProposalStatus.SENT,
-        totalAmount: 12500,
-        createdByUser: 'Jane Smith',
-        items: [],
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-        id: '3',
-        proposalNo: 'PROP-2024-0003',
-        clientName: 'Soylent Corp',
-        status: ProposalStatus.ACCEPTED,
-        totalAmount: 3000,
-        createdByUser: 'John Doe',
-        items: [],
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        updatedAt: new Date(Date.now() - 172800000).toISOString(),
-    }
-];
+import { getProposals, deleteProposal } from '@/server/actions/proposal/proposal-actions';
 
 export default function ProposalsPage() {
     const router = useRouter();
     const [search, setSearch] = useState('');
-    const [proposals, setProposals] = useState<Proposal[]>(MOCK_PROPOSALS);
+    const [proposals, setProposals] = useState<Proposal[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-        // Client side filtering for visual demo
-        if (!value) {
-            setProposals(MOCK_PROPOSALS);
+    const fetchProposals = async () => {
+        setIsLoading(true);
+        const result = await getProposals();
+        if (result?.data?.success && Array.isArray(result.data.data)) {
+            // Note: Adjusting for potential API response wrapper structure if needed
+            // The action returns { success: true, data: API_RESPONSE }
+            // If the API returns direct array: result.data
+            // If API returns { proposals: [...] }: result.data.proposals
+            // Based on typical express res.json(proposals) it should be an array.
+            setProposals(result.data.data);
+        } else if (Array.isArray(result.data)) {
+            setProposals(result.data);
         } else {
-            const lower = value.toLowerCase();
-            setProposals(MOCK_PROPOSALS.filter(p =>
-                p.proposalNo.toLowerCase().includes(lower) ||
-                p.clientName.toLowerCase().includes(lower)
-            ));
+            console.error("Failed to fetch proposals", result);
+            // toast.error("Failed to fetch proposals"); // Optional: don't spam on load
         }
+        setIsLoading(false);
     };
+
+    useEffect(() => {
+        fetchProposals();
+    }, []);
+
+    const filteredProposals = proposals.filter(p => {
+        if (!search) return true;
+        const lower = search.toLowerCase();
+        return (
+            p.proposalNo.toLowerCase().includes(lower) ||
+            p.clientName.toLowerCase().includes(lower)
+        );
+    });
 
     const getStatusColor = (status: ProposalStatus) => {
         switch (status) {
@@ -101,6 +81,7 @@ export default function ProposalsPage() {
     };
 
     const formatDate = (date: string) => {
+        if (!date) return '-';
         return new Date(date).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -108,9 +89,17 @@ export default function ProposalsPage() {
         });
     };
 
-    const handleDelete = (id: string) => {
-        toast.success("Proposal deleted (mock)");
-        setProposals(prev => prev.filter(p => p.id !== id));
+    const handleDelete = async (id: string) => {
+        const confirm = window.confirm("Are you sure you want to delete this proposal?");
+        if (!confirm) return;
+
+        const res = await deleteProposal({ id });
+        if (res?.data?.success) {
+            toast.success("Proposal deleted");
+            fetchProposals(); // Refresh
+        } else {
+            toast.error(res?.data?.message || "Failed to delete proposal");
+        }
     };
 
     return (
@@ -142,7 +131,7 @@ export default function ProposalsPage() {
                                 placeholder="Search..."
                                 className="pl-8"
                                 value={search}
-                                onChange={(e) => handleSearchChange(e.target.value)}
+                                onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
                         <Button variant="outline">
@@ -169,14 +158,20 @@ export default function ProposalsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {proposals.length === 0 ? (
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                        Loading proposals...
+                                    </TableCell>
+                                </TableRow>
+                            ) : filteredProposals.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                                         No proposals found
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                proposals.map((proposal) => (
+                                filteredProposals.map((proposal) => (
                                     <TableRow key={proposal.id}>
                                         <TableCell className="font-medium">{proposal.proposalNo}</TableCell>
                                         <TableCell>{proposal.clientName}</TableCell>
@@ -186,8 +181,8 @@ export default function ProposalsPage() {
                                                 {proposal.status}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">{formatCurrency(proposal.totalAmount)}</TableCell>
-                                        <TableCell>{proposal.createdByUser}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(proposal.totalAmount || 0)}</TableCell>
+                                        <TableCell>{proposal.createdByUser || 'System'}</TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -200,19 +195,23 @@ export default function ProposalsPage() {
                                                         <Eye className="mr-2 h-4 w-4" />
                                                         View
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => router.push(`/proposals/${proposal.id}/edit`)}>
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => toast.info('Preview PDF (mock)')}>
+                                                    {proposal.status === ProposalStatus.DRAFT && (
+                                                        <DropdownMenuItem onClick={() => router.push(`/proposals/${proposal.id}/edit`)}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem onClick={() => toast.info('Preview PDF (Not implemented remote)')}>
                                                         <FileText className="mr-2 h-4 w-4" />
                                                         Preview PDF
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(proposal.id)}>
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
+                                                    {proposal.status === ProposalStatus.DRAFT && (
+                                                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(proposal.id)}>
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

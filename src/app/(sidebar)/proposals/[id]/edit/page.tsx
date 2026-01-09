@@ -9,11 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProposalStatus } from '@/types/proposal';
+import { getProposalById, updateProposal } from '@/server/actions/proposal/proposal-actions';
 
 const proposalItemSchema = z.object({
     description: z.string().min(1, 'Description is required'),
@@ -59,28 +59,29 @@ export default function EditProposalPage() {
     const totalAmount = items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) || 0;
 
     useEffect(() => {
-        // Simulate fetching data
         const fetchProposal = async () => {
             setIsLoading(true);
             try {
-                // Mock delay
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Mock Data
-                const mockData = {
-                    clientName: 'Acme Corp',
-                    clientEmail: 'contact@acme.com',
-                    clientPhone: '123-456-7890',
-                    status: ProposalStatus.DRAFT,
-                    items: [
-                        { description: 'Web Development', quantity: 1, unitPrice: 3000 },
-                        { description: 'SEO Optimization', quantity: 1, unitPrice: 2000 },
-                    ]
-                };
-
-                form.reset(mockData);
+                const res = await getProposalById({ id });
+                if (res?.data?.success && res.data.data) {
+                    const proposal = res.data.data;
+                    form.reset({
+                        clientName: proposal.clientName,
+                        clientEmail: proposal.clientEmail || '',
+                        clientPhone: proposal.clientPhone || '',
+                        status: proposal.status,
+                        items: proposal.items?.map((item: any) => ({
+                            description: item.description,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice
+                        })) || [],
+                    });
+                } else {
+                    toast.error(res?.data?.message || "Failed to load proposal");
+                }
             } catch (error) {
-                toast.error("Failed to load proposal");
+                console.error(error);
+                toast.error("An error occurred");
             } finally {
                 setIsLoading(false);
             }
@@ -94,20 +95,23 @@ export default function EditProposalPage() {
     const onSubmit = async (data: ProposalFormValues) => {
         setIsSubmitting(true);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log('Update Data:', data);
-            toast.success('Proposal updated successfully!');
-            router.push(`/proposals/${id}`);
+            const res = await updateProposal({ id, ...data });
+            if (res?.data?.success) {
+                toast.success('Proposal updated successfully!');
+                router.push(`/proposals/${id}`);
+            } else {
+                toast.error(res?.data?.message || 'Failed to update proposal');
+            }
         } catch (error) {
-            toast.error('Failed to update proposal');
+            console.error(error);
+            toast.error('An unexpected error occurred');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     if (isLoading) {
-        return <div className="p-6 text-center">Loading proposal...</div>;
+        return <div className="p-6 text-center text-gray-500">Loading proposal...</div>;
     }
 
     return (
