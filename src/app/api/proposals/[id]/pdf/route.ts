@@ -2,9 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = process.env.ERP_API_BASE_URL;
 // In a real app, ensure process.env.JWT_SECRET is set
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'; 
+const JWT_SECRET  = process.env.JWT_SECRET ; 
+
 
 export async function GET(
   request: NextRequest,
@@ -15,6 +16,10 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const isDownload = searchParams.get('download') === 'true';
 
+
+    if(!API_BASE_URL || !JWT_SECRET) {
+      return new NextResponse("Server configuration error for ENV", { status: 500 });
+    }
     // 1. Generate Token
     const token = jwt.sign({}, JWT_SECRET);
 
