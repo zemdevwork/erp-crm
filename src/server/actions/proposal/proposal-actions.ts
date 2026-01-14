@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { ProposalStatus } from '@/types/proposal';
 import jwt from 'jsonwebtoken';
+import { getCurrentUser } from '../admission-actions';
 
 // Configuration
 const API_BASE_URL = process.env.API_BASE_URL;
@@ -37,6 +38,7 @@ const createProposalSchema = z.object({
     clientName: z.string(),
     clientEmail: z.string().optional(),
     clientPhone: z.string().optional(),
+    branch:z.string(),
     items: z.array(proposalItemSchema).optional(),
 });
 
@@ -85,7 +87,12 @@ async function fetchExternal(endpoint: string, options: RequestInit = {}) {
 export const getProposals = action.action(async () => {
     try {
         const data = await fetchExternal('/proposals');
-        return { success: true, data };
+        const user = await getCurrentUser();
+        const branchId = user?.branch;
+        const role = user?.role;
+        const filteredData = data.filter((proposal: any) => proposal.branchId === branchId);
+        const responseDate = role === 'admin' ? data : filteredData;
+        return { success: true, data:responseDate };
     } catch (error) {
         console.log("error from get proposals",error)
         return { success: false, message: error instanceof Error ? error.message : 'Failed to fetch proposals' };
@@ -104,9 +111,12 @@ export const getProposalById = action.schema(z.object({ id: z.string() })).actio
 
 export const createProposal = action.schema(createProposalSchema).action(async ({ parsedInput }) => {
     try {
+        
+        const user = await getCurrentUser();
+        console.log("data input",parsedInput)
         const payload = {
             ...parsedInput,
-            createdByUser: 'CRM System User',
+            createdByUser: user?.name || 'CRM System User',
         };
 
         const data = await fetchExternal('/proposals', {

@@ -132,16 +132,18 @@ export async function getEnquiries(filters: EnquiryFilters = {}): Promise<Action
     const where: Prisma.EnquiryWhereInput = {};
 
     // Role-based filtering
-    if (user.role === 'admin') {
+    const role = (user.role || '').toLowerCase();
+    
+    if (role === 'admin') {
       // Admin sees everything (no default filter).
-    } else {
-      // Managers and other roles (e.g. telecaller, executive) see everything in their branch.
+    } else if (role === 'manager') {
+      // Managers see everything in their branch.
       if (user.branch) {
         where.branchId = user.branch;
-      } else {
-        // Fallback if no branch assigned: restrict to self-assigned
-        where.assignedToUserId = user.id;
       }
+    } else {
+      // All other roles (staff) see ONLY enquiries assigned to them.
+      where.assignedToUserId = user.id;
     }
 
     // Previous specific logic removed to enforce strict Admin vs Branch/User split.
@@ -303,7 +305,8 @@ export async function getEnquiry(id: string): Promise<ActionResponse> {
     }
 
     // Check access permissions
-    if (user.role === 'telecaller' && enquiry.assignedToUserId !== user.id) {
+    const role = (user.role || '').toLowerCase();
+    if (role !== 'admin' && role !== 'manager' && enquiry.assignedToUserId !== user.id) {
       return {
         success: false,
         message: 'Access denied',
@@ -337,7 +340,8 @@ export async function updateEnquiry(data: UpdateEnquiryInput): Promise<ActionRes
       };
     }
 
-    if (user.role === 'telecaller' && existingEnquiry.assignedToUserId !== user.id) {
+    const role = (user.role || '').toLowerCase();
+    if (role !== 'admin' && role !== 'manager' && existingEnquiry.assignedToUserId !== user.id) {
       return {
         success: false,
         message: 'Access denied',
@@ -402,7 +406,8 @@ export async function updateEnquiryStatus(
       };
     }
 
-    if (user.role === 'telecaller' && existingEnquiry.assignedToUserId !== user.id) {
+    const role = (user.role || '').toLowerCase();
+    if (role !== 'admin' && role !== 'manager' && existingEnquiry.assignedToUserId !== user.id) {
       return {
         success: false,
         message: 'Access denied',
@@ -451,7 +456,8 @@ export async function updateEnquiryStatusWithActivity(
     }
 
     // Role-based access control
-    if (user.role === 'telecaller' && existingEnquiry.assignedToUserId !== user.id) {
+    const role = (user.role || '').toLowerCase();
+    if (role !== 'admin' && role !== 'manager' && existingEnquiry.assignedToUserId !== user.id) {
       return {
         success: false,
         message: 'Access denied',
@@ -537,7 +543,8 @@ export async function updateEnquiryStatusDirectToEnrolled(
     }
 
     // Role-based access control
-    if (user.role === 'telecaller' && existingEnquiry.assignedToUserId !== user.id) {
+    const role = (user.role || '').toLowerCase();
+    if (role !== 'admin' && role !== 'manager' && existingEnquiry.assignedToUserId !== user.id) {
       return {
         success: false,
         message: 'Access denied',

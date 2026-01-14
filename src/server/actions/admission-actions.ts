@@ -15,7 +15,7 @@ import { Prisma } from "@prisma/client";
 import { calculateBalance, calculateTotalFee } from "@/lib/fee-utils";
 
 // Helper function to get current user
-async function getCurrentUser() {
+export async function getCurrentUser() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });

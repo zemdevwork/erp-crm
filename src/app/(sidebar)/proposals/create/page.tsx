@@ -44,6 +44,7 @@ const createProposalSchema = z.object({
     clientName: z.string().min(1, 'Client Name is required'),
     clientEmail: z.string().email().optional().or(z.literal('')),
     clientPhone: z.string().optional(),
+    branch: z.string(),
     items: z.array(proposalItemSchema),
 });
 
@@ -74,10 +75,6 @@ export default function CreateProposalPage() {
     // Handle URL param for enquiryId
     useEffect(() => {
         if (enquiryIdParam) {
-            // Fetch specific enquiry details (using list filter for now as quick solution or getEnquiry if available)
-            // Ideally should use getEnquiry(id) but getEnquiries with search might be enough if unique or just fetch list
-            // Let's rely on standard fetch logic or a direct fetch helper if we want to be robust.
-            // Since `getEnquiries` is what I imported, let's use it or `getEnquiry` if I import it.
              import('@/server/actions/enquiry').then(({ getEnquiry }) => {
                 getEnquiry(enquiryIdParam).then((res) => {
                     if (res.success && res.data) {
@@ -86,6 +83,9 @@ export default function CreateProposalPage() {
                         form.setValue('clientName', enquiry.candidateName);
                         form.setValue('clientEmail', enquiry.email || '');
                         form.setValue('clientPhone', enquiry.phone || '');
+                        if (enquiry.branchId) {
+                            form.setValue('branch', enquiry.branchId);
+                        }
                     }
                 });
              });
@@ -98,6 +98,7 @@ export default function CreateProposalPage() {
             clientName: '',
             clientEmail: '',
             clientPhone: '',
+            branch: '',
             items: [{ description: '', quantity: 1, unitPrice: 0 }],
         },
     });
@@ -181,6 +182,9 @@ export default function CreateProposalPage() {
                                                                     form.setValue('clientName', enquiry.candidateName);
                                                                     form.setValue('clientEmail', enquiry.email || '');
                                                                     form.setValue('clientPhone', enquiry.phone || '');
+                                                                    if (enquiry.branchId) {
+                                                                        form.setValue('branch', enquiry.branchId);
+                                                                    }
                                                                 }
                                                                 setOpen(false);
                                                             }}
